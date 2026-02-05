@@ -1,8 +1,18 @@
-# PiFridge
+# PiFridge - An easy way of keeping track of your fridge
+[![Instagram](https://img.shields.io/badge/Instagram-pi_fridge-E4405F?logo=instagram&logoColor=white)](https://www.instagram.com/pi_fridge)
 
-PiFridge is a **soft real-time IoT fridge monitoring system** built on a **Raspberry Pi**.  
-It continuously tracks **true fridge temperature and humidity** and logs **food items** as they are placed into the fridge using **barcode scanning or manual input**. All data is accessible through a **web application**.
+## Table of Contents
+- [What is Pi Fridge](#What-is-Pi-Fridge)
+- [Documentation](#Documentation)
+- [Hardware/Software Requirements](#Hardware/Software-Requirements)
+- [Documentation](#Documentation)
 
-This project is designed for **educational, research, and open-source experimentation** in real-time systems, IoT, and web-based monitoring.
+## What is Pi Fridge?
 
-readmetest
+## Documentation
+[Raspberry Pi Linux Install Help](docs/example.md)
+
+
+## Hardware/Software Requirements
+
+
