@@ -1,0 +1,15 @@
+{
+    "object_detect_tf" : {
+        "number_of_threads" : 2,
+        "refresh_rate" : 10,
+        "confidence_threshold" : 0.2,
+        "overlap_threshold" : 0.5,
+        "model_file" : "/home/pifridge/Desktop/PiFridge/object_detect/detect.tflite",
+        "labels_file" : "/home/pifridge/Desktop/PiFridge/object_detect/labelmap.txt",
+        "verbose" : 2
+    },
+    "object_detect_draw_cv" : {
+       "line_thickness" : 3,
+       "font_size" : 1.5
+    }
+}

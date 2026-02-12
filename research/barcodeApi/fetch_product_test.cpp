@@ -17,7 +17,7 @@ static size_t write_cb(void* contents, size_t size, size_t nmemb, void* userp) {
 
 int main() {
     const std::string url =
-        "https://world.openfoodfacts.net/api/v2/product/3017624010701?fields=product_name";
+        "https://world.openfoodfacts.net/api/v2/product/3274080005003?fields=product_name";
 
     CURL* curl = curl_easy_init();
     if (!curl) {
