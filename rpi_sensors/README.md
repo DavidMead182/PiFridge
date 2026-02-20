@@ -81,3 +81,7 @@ sudo ./rpi_sensors/build/pifridge_light_sensor_demo --active-low
 Measure lux with door open and door closed.
 Set open threshold higher than closed lux.
 Set close threshold lower than open threshold to avoid flicker.
+
+## Tracking
+
+This work addresses GitHub issue 6.
