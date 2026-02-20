@@ -1,0 +1,33 @@
+name: rpi_sensors_tests
+
+on:
+  push:
+    paths:
+      - "rpi_sensors/**"
+      - ".github/workflows/rpi_sensors_tests.yml"
+  pull_request:
+    paths:
+      - "rpi_sensors/**"
+      - ".github/workflows/rpi_sensors_tests.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Configure
+        run: cmake -S rpi_sensors -B rpi_sensors/build -G Ninja
+
+      - name: Build
+        run: cmake --build rpi_sensors/build
+
+      - name: Test
+        run: ctest --test-dir rpi_sensors/build --output-on-failure
