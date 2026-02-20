@@ -14,6 +14,9 @@
 #include <sys/signalfd.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
+#include <poll.h>
+#include <thread>
+#include <sys/eventfd.h>
 
 static void printUsage(const char* argv0) {
     std::cout
@@ -160,7 +163,68 @@ int main(int argc, char** argv) {
         GpioOutput gpio(gpioChip, gpioLine, activeHigh);
         DoorLightController ctl(sensor, gpio, openLux, closeLux);
 
-        bool lastOpen = ctl.isDoorOpen();
+        
+        // Worker thread: run controller updates when main loop signals a tick.
+        struct ControllerWorker {
+            int tick_fd;
+            int stop_fd;
+            std::thread th;
+
+            explicit ControllerWorker(DoorLightController& ctl_ref)
+                : tick_fd(eventfd(0, EFD_CLOEXEC)),
+                  stop_fd(eventfd(0, EFD_CLOEXEC)) {
+                if (tick_fd < 0 || stop_fd < 0) {
+                    std::perror("eventfd");
+                    std::exit(1);
+                }
+
+                th = std::thread([&ctl_ref, this] {
+                    pollfd fds[2] = {
+                        { tick_fd, POLLIN, 0 },
+                        { stop_fd, POLLIN, 0 },
+                    };
+
+                    while (true) {
+                        int rc = poll(fds, 2, -1);
+                        if (rc < 0) {
+                            if (errno == EINTR) continue;
+                            std::perror("poll");
+                            return;
+                        }
+
+                        if (fds[1].revents & POLLIN) {
+                            uint64_t v;
+                            (void)read(stop_fd, &v, sizeof(v));
+                            return;
+                        }
+
+                        if (fds[0].revents & POLLIN) {
+                            uint64_t v;
+                            if (read(tick_fd, &v, sizeof(v)) == (ssize_t)sizeof(v)) {
+                                ctl_ref.update();
+                            }
+                        }
+                    }
+                });
+            }
+
+            void notify_tick() const {
+                uint64_t one = 1;
+                (void)write(tick_fd, &one, sizeof(one));
+            }
+
+            ~ControllerWorker() {
+                uint64_t one = 1;
+                if (stop_fd >= 0) (void)write(stop_fd, &one, sizeof(one));
+                if (th.joinable()) th.join();
+                if (tick_fd >= 0) close(tick_fd);
+                if (stop_fd >= 0) close(stop_fd);
+            }
+        };
+
+        ControllerWorker worker(ctl);
+
+bool lastOpen = ctl.isDoorOpen();
 
         std::cout
             << "PiFridge light sensor demo running\n"
@@ -196,7 +260,7 @@ int main(int argc, char** argv) {
                     std::uint64_t ticks = 0;
                     ::read(tfd, &ticks, sizeof(ticks));
 
-                    ctl.update();
+                    worker.notify_tick();
 
                     bool nowOpen = ctl.isDoorOpen();
                     if (nowOpen != lastOpen) {
