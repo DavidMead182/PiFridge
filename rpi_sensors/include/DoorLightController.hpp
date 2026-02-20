@@ -13,10 +13,12 @@ public:
           gpio_(gpio),
           openThresholdLux_(openThresholdLux),
           closeThresholdLux_(closeThresholdLux),
-          isOpen_(false) {}
+          isOpen_(false),
+          lastLux_(-1.0) {}
 
     void update() {
         double lux = sensor_.readLux();
+        lastLux_ = lux;
 
         if (!isOpen_ && lux >= openThresholdLux_) {
             isOpen_ = true;
@@ -32,10 +34,15 @@ public:
         return isOpen_;
     }
 
+    double lastLux() const {
+        return lastLux_;
+    }
+
 private:
     ILightSensor& sensor_;
     IGpioOutput& gpio_;
     double openThresholdLux_;
     double closeThresholdLux_;
     bool isOpen_;
+    double lastLux_;
 };
