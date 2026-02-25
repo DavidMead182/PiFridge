@@ -5,7 +5,12 @@
 #include "IGpioOutput.hpp"
 
 struct gpiod_chip;
+
+#if defined(PIFRIDGE_GPIOD_V2) && PIFRIDGE_GPIOD_V2
+struct gpiod_line_request;
+#else
 struct gpiod_line;
+#endif
 
 class GpioOutput final : public IGpioOutput {
 public:
@@ -25,6 +30,13 @@ private:
     void setValue(int value);
 
     gpiod_chip* chip_;
+
+#if defined(PIFRIDGE_GPIOD_V2) && PIFRIDGE_GPIOD_V2
+    gpiod_line_request* request_;
+    unsigned int lineOffset_;
+#else
     gpiod_line* line_;
+#endif
+
     bool activeHigh_;
 };
