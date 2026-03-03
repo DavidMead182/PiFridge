@@ -234,10 +234,27 @@ private:
             if (!running_) break;
 
             try {
+            
+                // record the exact microsecond before the sensor read
+                auto start_time = std::chrono::high_resolution_clock::now();
+
                 const auto sample = bme_->readSample();
+
+                // We record the exact microsecond after the sensor read
+                auto end_time = std::chrono::high_resolution_clock::now();
+                
+                // Calculate the difference in microseconds (us)
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+
+                //  prints the real-time performance to the terminal
+                std::cout << "[RT-METRIC] I2C Read Latency: " << duration << " us" << std::endl;
+                
+
                 if (cb_) cb_(sample);
-            } catch (const std::exception& e) {
-                std::cerr << "BME680 read error: " << e.what() << "\n";
+
+                /* I am commenting out the original line below as a backup
+                // const auto sample = bme_->readSample();
+                */
             }
         }
     }
