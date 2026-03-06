@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/pifridge_light_sensor_demo.dir/link.d CMakeFiles/pifridge_light_sensor_demo.dir/src/main.cpp.o -o pifridge_light_sensor_demo  libpifridge_rpi_hw.a -lgpiod
