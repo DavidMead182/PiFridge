@@ -1,140 +1,124 @@
 #include <iostream>
+#include <functional>
 #include <fcntl.h>
 #include <unistd.h>
 #include <termios.h>
 #include <cstring>
-#include <thread>
-#include <mutex>
-#include <queue>
-#include <chrono>
+#include <cerrno>
+#include <sys/select.h>
 
-class BarcodeScanner {
+class SerialReader {
 public:
-    BarcodeScanner(const std::string& port = "/dev/serial0", int baud = 9600) 
-        : fd(-1), running(false) 
-    {
-        fd = open(port.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
+    using Callback = std::function<void(const std::string&)>;
+
+    SerialReader(const std::string& portName, Callback cb)
+        : port(portName), callback(cb), fd(-1) {}
+
+    ~SerialReader() {
+        if (fd >= 0) {
+            close(fd);
+        }
+    }
+
+    bool openPort() {
+        fd = open(port.c_str(), O_RDONLY | O_NOCTTY);
         if (fd < 0) {
-            std::cerr << "Error opening serial port: " << port << std::endl;
+            std::cerr << "Failed to open " << port << ": " << strerror(errno) << "\n";
+            return false;
+        }
+
+        termios tty{};
+        if (tcgetattr(fd, &tty) != 0) {
+            std::cerr << "tcgetattr failed: " << strerror(errno) << "\n";
+            close(fd);
+            fd = -1;
+            return false;
+        }
+
+        cfsetispeed(&tty, B9600);
+        cfsetospeed(&tty, B9600);
+
+        tty.c_cflag &= ~PARENB;
+        tty.c_cflag &= ~CSTOPB;
+        tty.c_cflag &= ~CSIZE;
+        tty.c_cflag |= CS8;
+        tty.c_cflag |= CREAD | CLOCAL;
+
+        tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+        tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+        tty.c_oflag &= ~OPOST;
+
+        tty.c_cc[VMIN] = 1;
+        tty.c_cc[VTIME] = 0;
+
+        if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+            std::cerr << "tcsetattr failed: " << strerror(errno) << "\n";
+            close(fd);
+            fd = -1;
+            return false;
+        }
+
+        return true;
+    }
+
+    void run() {
+        if (fd < 0) {
+            std::cerr << "Port not open\n";
             return;
         }
-        configurePort(baud);
-    }
 
-    ~BarcodeScanner() {
-        stop();
-        if (fd >= 0) close(fd);
-    }
+        char ch;
+        std::string buffer;
 
-    void start() {
-        if (running) return;
-        running = true;
-        scanThread = std::thread(&BarcodeScanner::scanLoop, this);
-    }
+        while (true) {
+            fd_set readfds;
+            FD_ZERO(&readfds);
+            FD_SET(fd, &readfds);
 
-    void stop() {
-        if (!running) return;
-        running = false;
-        if (scanThread.joinable()) scanThread.join();
-    }
+            int result = select(fd + 1, &readfds, nullptr, nullptr, nullptr);
+            if (result < 0) {
+                std::cerr << "select failed: " << strerror(errno) << "\n";
+                break;
+            }
 
-    bool hasBarcode() {
-        std::lock_guard<std::mutex> lock(mtx);
-        return !barcodeQueue.empty();
-    }
+            if (FD_ISSET(fd, &readfds)) {
+                ssize_t n = read(fd, &ch, 1);
+                if (n > 0) {
+                    if (ch == '\n') {
+                        if (!buffer.empty() && buffer.back() == '\r') {
+                            buffer.pop_back();
+                        }
 
-    std::string getBarcode() {
-        std::lock_guard<std::mutex> lock(mtx);
-        if (barcodeQueue.empty()) return "";
-        std::string code = barcodeQueue.front();
-        barcodeQueue.pop();
-        return code;
-    }
-
-    // Send software trigger command
-    void triggerScan() {
-        if (fd < 0) return;
-        unsigned char start_cmd = 0x16; // Most Waveshare modules
-        write(fd, &start_cmd, 1);
+                        callback(buffer);
+                        buffer.clear();
+                    } else {
+                        buffer += ch;
+                    }
+                } else if (n < 0) {
+                    std::cerr << "read failed: " << strerror(errno) << "\n";
+                    break;
+                }
+            }
+        }
     }
 
 private:
+    std::string port;
+    Callback callback;
     int fd;
-    bool running;
-    std::thread scanThread;
-    std::mutex mtx;
-    std::queue<std::string> barcodeQueue;
-
-    void configurePort(int baud) {
-        struct termios tty;
-        memset(&tty, 0, sizeof tty);
-
-        if (tcgetattr(fd, &tty) != 0) {
-            std::cerr << "Error getting attributes\n";
-            return;
-        }
-
-        cfsetospeed(&tty, B9600);
-        cfsetispeed(&tty, B9600);
-
-        tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;
-        tty.c_iflag = 0;
-        tty.c_oflag = 0;
-        tty.c_lflag = 0;
-        tty.c_cc[VMIN]  = 1;
-        tty.c_cc[VTIME] = 1;
-
-        tty.c_cflag |= (CLOCAL | CREAD);
-        tty.c_cflag &= ~(PARENB | PARODD);
-        tty.c_cflag &= ~CSTOPB;
-        tty.c_cflag &= ~CRTSCTS;
-
-        tty.c_iflag &= ~(IXON | IXOFF | IXANY);
-
-        tcsetattr(fd, TCSANOW, &tty);
-    }
-
-    void scanLoop() {
-        std::string buffer;
-        char c;
-
-        while (running) {
-            int n = read(fd, &c, 1);
-            if (n > 0) {
-                if (c == '\n' || c == '\r') {
-                    if (!buffer.empty()) {
-                        std::lock_guard<std::mutex> lock(mtx);
-                        barcodeQueue.push(buffer);
-                        buffer.clear();
-                    }
-                } else {
-                    buffer += c;
-                }
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-    }
 };
 
-// ------------------- Main -------------------
 int main() {
-    BarcodeScanner scanner("/dev/serial0", 9600);
-    scanner.start();
+    SerialReader reader("/dev/ttyAMA0", [](const std::string& data) {
+        std::cout << "Received: " << data << "\n";
+    });
 
-    std::cout << "Barcode scanner running. Sending start scan..." << std::endl;
-
-    while (true) {
-        // Send the scan trigger every 1 second
-        scanner.triggerScan();
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-
-        // Check for scanned barcode
-        while (scanner.hasBarcode()) {
-            std::string code = scanner.getBarcode();
-            std::cout << "Scanned: " << code << std::endl;
-        }
+    if (!reader.openPort()) {
+        return 1;
     }
 
-    scanner.stop();
+    std::cout << "Waiting for serial data...\n";
+    reader.run();
+
     return 0;
 }
