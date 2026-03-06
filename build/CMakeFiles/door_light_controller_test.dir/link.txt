@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/door_light_controller_test.dir/link.d CMakeFiles/door_light_controller_test.dir/tests/DoorLightControllerTest.cpp.o -o door_light_controller_test

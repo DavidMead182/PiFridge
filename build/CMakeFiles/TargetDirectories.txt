@@ -1,0 +1,6 @@
+/home/pifridge/PiFridge/build/CMakeFiles/door_light_controller_test.dir
+/home/pifridge/PiFridge/build/CMakeFiles/pifridge_rpi_hw.dir
+/home/pifridge/PiFridge/build/CMakeFiles/pifridge_light_sensor_demo.dir
+/home/pifridge/PiFridge/build/CMakeFiles/test.dir
+/home/pifridge/PiFridge/build/CMakeFiles/edit_cache.dir
+/home/pifridge/PiFridge/build/CMakeFiles/rebuild_cache.dir
