@@ -1,2 +1,0 @@
-/usr/bin/ar qc libpifridge_rpi_hw.a CMakeFiles/pifridge_rpi_hw.dir/src/Bh1750Sensor.cpp.o CMakeFiles/pifridge_rpi_hw.dir/src/GpioOutput.cpp.o
-/usr/bin/ranlib libpifridge_rpi_hw.a

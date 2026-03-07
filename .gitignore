@@ -43,3 +43,6 @@
 # PiFridge rpi_sensors build output
 rpi_sensors/build/
 rpicam-apps/
+
+# Top-level build output
+build/
