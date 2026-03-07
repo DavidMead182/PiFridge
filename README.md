@@ -1,11 +1,11 @@
-# 🧊 PiFridge — Mobile Dashboard
+# Mobile Dashboard
 
-> **⚠️ STATUS: IN DEVELOPMENT**
+> **IN DEVELOPMENT**
 > This is the Flutter mobile app for the PiFridge ecosystem. It acts as the **display interface** for the Raspberry Pi smart fridge system, showing live fridge data (temperature, humidity, door status, inventory) sent from the Pi. It also includes a **backup barcode scanner** using the phone camera for when the Pi's physical scanner misses something.
 
 ---
 
-## 📂 Understanding the Project Files
+## Understanding the Project Files
 
 In Flutter you write one codebase in Dart and it runs on Android, Web, and Windows automatically.
 
@@ -15,7 +15,7 @@ In Flutter you write one codebase in Dart and it runs on Android, Web, and Windo
 
 ---
 
-## 🖥️ How the App Fits Into the Bigger System
+##  How the App Fits
 
 ```
 [Raspberry Pi]
@@ -34,7 +34,7 @@ In Flutter you write one codebase in Dart and it runs on Android, Web, and Windo
 
 ---
 
-## 🚀 How to Run the App
+##  How to Run the App
 
 ### Prerequisites
 Make sure you have these installed:
@@ -128,7 +128,7 @@ flutter run -d windows
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 | Package | Purpose |
 |---|---|
@@ -142,7 +142,7 @@ flutter pub get
 
 ---
 
-## 🌳 Branch Structure
+##  Branch Structure
 
 | Branch | Contents |
 |---|---|
@@ -151,10 +151,3 @@ flutter pub get
 
 ---
 
-## 🔮 What's Coming Next
-
-- [ ] Connect app to Raspberry Pi over local network (HTTP polling or WebSocket)
-- [ ] Replace hardcoded fridge vitals with real sensor data from Pi
-- [ ] Inventory sync between Pi scanner and mobile app
-- [ ] Expiry date notifications
-- [ ] Shopping list feature (if item removed from fridge, add to list)
