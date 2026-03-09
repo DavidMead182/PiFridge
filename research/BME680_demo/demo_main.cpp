@@ -5,6 +5,8 @@
 // Run with permissions for /dev/i2c-* (often root or in i2c group).
 
 #include "BME680.hpp"
+#include "httplib.h"
+#include <mutex>
 
 #include <atomic>
 #include <chrono>
@@ -285,11 +287,47 @@ int main() {
         BME680Sensor sensor(cfg);
         BME680Printer printer;
 
-        sensor.registerCallback([&](const BME680Sample& s) { printer.onSample(s); });
+        // Latest sensor data shared between sensor thread and HTTP server
+        BME680Sample latestSample{};
+        std::mutex sampleMutex;
+
+        sensor.registerCallback([&](const BME680Sample& s) {
+            printer.onSample(s);
+            std::lock_guard<std::mutex> lock(sampleMutex);
+            latestSample = s;
+        });
         sensor.start();
 
-        std::cout << "Reading BME680 (forced mode)... press Ctrl+C to exit.\n";
-        while (true) std::this_thread::sleep_for(std::chrono::seconds(60));
+        // HTTP server — Flutter app calls these endpoints
+        httplib::Server svr;
+
+        svr.Get("/temperature", [&](const httplib::Request&, httplib::Response& res) {
+            std::lock_guard<std::mutex> lock(sampleMutex);
+            res.set_content("{\"temperature\":" + std::to_string(latestSample.temperature_c) + "}", "application/json");
+        });
+
+        svr.Get("/humidity", [&](const httplib::Request&, httplib::Response& res) {
+            std::lock_guard<std::mutex> lock(sampleMutex);
+            res.set_content("{\"humidity\":" + std::to_string(latestSample.humidity_rh) + "}", "application/json");
+        });
+
+        svr.Get("/lux", [&](const httplib::Request&, httplib::Response& res) {
+            res.set_content("{\"lux\":0.0}", "application/json");
+            // TODO: replace with real lux sensor reading when connected
+        });
+
+        svr.Get("/door", [&](const httplib::Request&, httplib::Response& res) {
+            res.set_content("{\"door_open\":false}", "application/json");
+            // TODO: replace with real door sensor reading when connected
+        });
+
+        svr.Get("/scanner", [&](const httplib::Request&, httplib::Response& res) {
+            res.set_content("{\"scanner_active\":false}", "application/json");
+            // TODO: replace with real scanner status when connected
+        });
+
+        std::cout << "BME680 running + HTTP server on port 5000...\n";
+        svr.listen("0.0.0.0", 5000);
 
     } catch (const std::exception& e) {
         std::cerr << "Fatal: " << e.what() << "\n";
