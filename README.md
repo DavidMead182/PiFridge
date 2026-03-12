@@ -16,7 +16,7 @@ Designed as a real-time embedded system for Uni Coursework.
 - Door open detection  
 - Event-driven architecture (threads, callbacks, timers)  
 - Live inventory tracking  
-- Alerts for unsafe conditions  
+- Alerts for unsafe conditions
 
 ## Motivation for PiFridge?
 
@@ -46,6 +46,12 @@ Door open detection | < TBC
 Temperature alert | < TBC  
 
 Implemented using event-driven programming (callbacks, threads, timers) instead of polling where possible.
+
+---
+
+## Documentation - update as we go
+
+- [BH1750 light sensor](docs/sensors.md)
 
 ---
 
