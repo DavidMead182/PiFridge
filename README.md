@@ -61,8 +61,9 @@ Implemented using event-driven programming (callbacks, threads, timers) instead 
 
 ## Circuit Setup
 
-< -- GET A SCHEMATIC OR A VIDEO OF SOME KIND -- >
+<img width="1076" height="453" alt="image" src="https://github.com/user-attachments/assets/831f75c7-f635-493c-8019-81c1bb2bb99b" />
 
+<img width="1055" height="581" alt="image" src="https://github.com/user-attachments/assets/ef9a75c9-923f-4a9a-ab19-531189d66777" />
 
 ## Software Requirements
 
