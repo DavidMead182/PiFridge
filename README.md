@@ -55,7 +55,7 @@ Implemented using event-driven programming (callbacks, threads, timers) instead 
 
 - Raspberry Pi 5
 - Raspberry Pi Camera Module 3
-- Temperature/Humidity sensor BME ...
+- Temperature/Humidity sensor BME680
 - Optional LED for alerts
 
 
