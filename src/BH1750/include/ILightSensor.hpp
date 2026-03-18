@@ -1,9 +1,14 @@
 #pragma once
 
+#include <functional>
+
 class ILightSensor {
 public:
-    virtual ~ILightSensor() = default;
+    using LightLevelCallback = std::function<void(double)>;
 
-    // Returns current light level in lux
-    virtual double readLux() = 0;
+    virtual ~ILightSensor();
+
+    virtual void registerCallback(LightLevelCallback callback) = 0;
+    virtual void start(int intervalMs) = 0;
+    virtual void stop() = 0;
 };

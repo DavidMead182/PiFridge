@@ -1,21 +1,31 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(pi_fridge_rpi_sensors LANGUAGES CXX)
+project(pi_fridge_bh1750 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(pifridge_logic INTERFACE)
-target_include_directories(pifridge_logic INTERFACE
+enable_testing()
+
+find_package(Threads REQUIRED)
+
+add_library(pifridge_light_logic STATIC
+    ILightSensor.cpp
+    DoorLightController.cpp
+)
+
+target_include_directories(pifridge_light_logic PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 add_executable(door_light_controller_test
-    tests/DoorLightControllerTest.cpp
+    test/DoorLightControllerTest.cpp
 )
-target_link_libraries(door_light_controller_test PRIVATE pifridge_logic)
 
-enable_testing()
+target_link_libraries(door_light_controller_test PRIVATE
+    pifridge_light_logic
+)
+
 add_test(NAME door_light_controller_test COMMAND door_light_controller_test)
 
 option(PIFRIDGE_BUILD_HARDWARE "Build Raspberry Pi hardware implementations" OFF)
@@ -29,10 +39,9 @@ if(PIFRIDGE_BUILD_HARDWARE)
     check_cxx_source_compiles("#include <gpiod.h>\nint main(){ (void)&gpiod_chip_request_lines; return 0; }\n" PIFRIDGE_HAVE_GPIOD_V2)
     unset(CMAKE_REQUIRED_INCLUDES)
 
-
     add_library(pifridge_rpi_hw STATIC
-        src/Bh1750Sensor.cpp
-        src/GpioOutput.cpp
+        Bh1750Sensor.cpp
+        GpioOutput.cpp
     )
 
     target_include_directories(pifridge_rpi_hw PUBLIC
@@ -45,7 +54,8 @@ if(PIFRIDGE_BUILD_HARDWARE)
     )
 
     target_link_libraries(pifridge_rpi_hw PUBLIC
-        pifridge_logic
+        pifridge_light_logic
+        Threads::Threads
         ${GPIOD_LIBRARIES}
     )
 
@@ -59,9 +69,11 @@ if(PIFRIDGE_BUILD_HARDWARE)
         target_compile_definitions(pifridge_rpi_hw PUBLIC PIFRIDGE_GPIOD_V2=0)
     endif()
 
-
     add_executable(pifridge_light_sensor_demo
-        src/main.cpp
+        main.cpp
     )
-    target_link_libraries(pifridge_light_sensor_demo PRIVATE pifridge_rpi_hw)
+
+    target_link_libraries(pifridge_light_sensor_demo PRIVATE
+        pifridge_rpi_hw
+    )
 endif()
