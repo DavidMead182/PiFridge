@@ -1,336 +1,193 @@
 // demo_main.cpp
-// g++ -std=c++17 -O2 -pthread demo_main.cpp -o bme680_demo
+// Demonstrates BME680 using the callback pattern described in the RT coding handout.
 //
-// Requires Linux headers: i2c-dev, timerfd.
-// Run with permissions for /dev/i2c-* (often root or in i2c group).
-
+// Build:
+//   g++ -std=c++17 -O2 \
+//       demo_main.cpp BME680.cpp LinuxI2CDevice.cpp \
+//       -I../../include \
+//       -o bme680_demo
+//
+// Run (needs i2c group or root):
+//   ./bme680_demo
+ 
 #include "BME680.hpp"
-#include "httplib.h"
-#include <mutex>
-
+#include "../common/LinuxI2CDevice.hpp"
+ 
 #include <atomic>
 #include <chrono>
+#include <csignal>
 #include <cstdint>
-#include <cstring>
-#include <functional>
 #include <iostream>
+#include <functional>
 #include <stdexcept>
-#include <string>
-#include <thread>
-
-#include <fcntl.h>
-#include <linux/i2c-dev.h>
-#include <sys/ioctl.h>
 #include <sys/timerfd.h>
+#include <thread>
 #include <unistd.h>
-
-// -------------------------- Small utilities (RAII FD) --------------------------
-
-class FileDescriptor {
+ 
+// ---------------------------------------------------------------------------
+// Subscriber: just prints the sample - knows nothing about I2C or threads
+// ---------------------------------------------------------------------------
+ 
+class BME680Printer {
 public:
-    FileDescriptor() = default;
-    explicit FileDescriptor(int fd) : fd_(fd) {}
-    ~FileDescriptor() { closeNoThrow(); }
-
-    FileDescriptor(const FileDescriptor&) = delete;
-    FileDescriptor& operator=(const FileDescriptor&) = delete;
-
-    FileDescriptor(FileDescriptor&& other) noexcept : fd_(other.fd_) { other.fd_ = -1; }
-    FileDescriptor& operator=(FileDescriptor&& other) noexcept {
-        if (this != &other) {
-            closeNoThrow();
-            fd_ = other.fd_;
-            other.fd_ = -1;
-        }
-        return *this;
+    void onSample(const BME680Sample& s) {
+        std::cout
+            << "T="   << s.temperature_c << " °C  "
+            << "P="   << s.pressure_hpa  << " hPa  "
+            << "RH="  << s.humidity_rh   << " %  "
+            << "Gas=" << s.gas_ohms      << " ohm\n";
     }
-
-    int get() const { return fd_; }
-    explicit operator bool() const { return fd_ >= 0; }
-
-    void reset(int newFd = -1) {
-        closeNoThrow();
-        fd_ = newFd;
-    }
-
-private:
-    void closeNoThrow() noexcept {
-        if (fd_ >= 0) ::close(fd_);
-        fd_ = -1;
-    }
-    int fd_ = -1;
 };
-
-// -------------------------- Linux I2C implementation --------------------------
-
-class LinuxI2CDevice final : public II2CDevice {
-public:
-    LinuxI2CDevice(int bus, uint8_t address) {
-        const std::string path = "/dev/i2c-" + std::to_string(bus);
-        int fd = ::open(path.c_str(), O_RDWR);
-        if (fd < 0) throw std::runtime_error("Failed to open " + path);
-
-        fd_.reset(fd);
-
-        if (::ioctl(fd_.get(), I2C_SLAVE, address) < 0) {
-            throw std::runtime_error("Failed to set I2C_SLAVE addr");
-        }
-    }
-
-    void writeBytes(const uint8_t* data, size_t len) override {
-        const ssize_t w = ::write(fd_.get(), data, len);
-        if (w < 0 || static_cast<size_t>(w) != len) throw std::runtime_error("I2C write failed");
-    }
-
-    void readBytes(uint8_t* data, size_t len) override {
-        const ssize_t r = ::read(fd_.get(), data, len);
-        if (r < 0 || static_cast<size_t>(r) != len) throw std::runtime_error("I2C read failed");
-    }
-
-    void writeReg(uint8_t reg, uint8_t value) override {
-        uint8_t buf[2] = {reg, value};
-        writeBytes(buf, sizeof(buf));
-    }
-
-    void readReg(uint8_t reg, uint8_t* data, size_t len) override {
-        writeBytes(&reg, 1);
-        readBytes(data, len);
-    }
-
-private:
-    FileDescriptor fd_;
-};
-
-// -------------------------- Implement a couple BME680 private helpers --------------------------
-
-#include <cmath>
-
-void BME680::sleepMs(int ms) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
-}
-
-std::vector<int32_t> BME680::unpackCoeffs(const uint8_t* b) {
-    // Format: "<hbBHhbBhhbbHhhBBBHbbbBbHhbb"
-    // Read sequentially from 38 bytes and output as int32s.
-    std::vector<int32_t> out;
-    out.reserve(32);
-
-    size_t i = 0;
-    auto need = [&](size_t n) {
-        if (i + n > 38) throw std::runtime_error("Coeff unpack out of range");
-    };
-
-    auto rd_i8  = [&]() -> int32_t { need(1); return int8_t(b[i++]); };
-    auto rd_u8  = [&]() -> int32_t { need(1); return uint8_t(b[i++]); };
-    auto rd_i16 = [&]() -> int32_t { need(2); int16_t v = int16_t(uint16_t(b[i]) | (uint16_t(b[i+1])<<8)); i+=2; return v; };
-    auto rd_u16 = [&]() -> int32_t { need(2); uint16_t v = uint16_t(b[i]) | (uint16_t(b[i+1])<<8); i+=2; return v; };
-
-    // h b B H h b B h h b b H h h B B B H b b b B b H h b b
-    out.push_back(rd_i16()); // h
-    out.push_back(rd_i8());  // b
-    out.push_back(rd_u8());  // B
-    out.push_back(rd_u16()); // H
-    out.push_back(rd_i16()); // h
-    out.push_back(rd_i8());  // b
-    out.push_back(rd_u8());  // B
-    out.push_back(rd_i16()); // h
-    out.push_back(rd_i16()); // h
-    out.push_back(rd_i8());  // b
-    out.push_back(rd_i8());  // b
-    out.push_back(rd_u16()); // H
-    out.push_back(rd_i16()); // h
-    out.push_back(rd_i16()); // h
-    out.push_back(rd_u8());  // B
-    out.push_back(rd_u8());  // B
-    out.push_back(rd_u8());  // B
-    out.push_back(rd_u16()); // H
-    out.push_back(rd_i8());  // b
-    out.push_back(rd_i8());  // b
-    out.push_back(rd_i8());  // b
-    out.push_back(rd_u8());  // B
-    out.push_back(rd_i8());  // b
-    out.push_back(rd_u16()); // H
-    out.push_back(rd_i16()); // h
-    out.push_back(rd_i8());  // b
-    out.push_back(rd_i8());  // b
-
-    return out;
-}
-
-// -------------------------- Evented wrapper (thread + callback) --------------------------
-
-struct DemoSettings {
-    int i2c_bus = 1;
-    uint8_t i2c_addr = 0x77; // common BME680 addresses: 0x76 or 0x77
-    std::chrono::milliseconds interval{1000};
-    BME680Settings sensor{};
-};
-
+ 
+// ---------------------------------------------------------------------------
+// Evented sensor wrapper: owns thread + timerfd, fires callback each interval
+// As per handout: blocking I/O (timerfd read) drives the timing.
+// ---------------------------------------------------------------------------
+ 
 class BME680Sensor {
 public:
     using Callback = std::function<void(const BME680Sample&)>;
-
-    explicit BME680Sensor(DemoSettings s = {}) : cfg_(s) {}
+ 
+    explicit BME680Sensor(int i2c_bus, uint8_t i2c_addr,
+                          std::chrono::milliseconds interval,
+                          BME680Settings sensor_settings = {})
+        : interval_(interval)
+        , sensor_settings_(sensor_settings)
+        , i2c_bus_(i2c_bus)
+        , i2c_addr_(i2c_addr)
+    {}
+ 
     ~BME680Sensor() { stop(); }
-
+ 
+    /** Register the lambda/functor called on each new sample. */
     void registerCallback(Callback cb) { cb_ = std::move(cb); }
-
-    void setConfig(const DemoSettings& s) {
-        cfg_ = s;
-        if (bme_) bme_->applySettings(cfg_.sensor);
-    }
-
+ 
     void start() {
         if (running_) return;
-
-        auto dev = std::make_unique<LinuxI2CDevice>(cfg_.i2c_bus, cfg_.i2c_addr);
+ 
+        // Create sensor - inject the Linux I2C implementation
+        auto dev = std::make_unique<LinuxI2CDevice>(i2c_bus_, i2c_addr_);
         bme_ = std::make_unique<BME680>(std::move(dev));
-        bme_->initialize(cfg_.sensor);
-
-        int tfd = ::timerfd_create(CLOCK_MONOTONIC, 0);
-        if (tfd < 0) throw std::runtime_error("timerfd_create failed");
-        timerfd_.reset(tfd);
-
+        bme_->initialize(sensor_settings_);
+ 
+        // Set up timerfd for reliable interval timing (see handout section 3.4)
+        tfd_ = ::timerfd_create(CLOCK_MONOTONIC, 0);
+        if (tfd_ < 0) throw std::runtime_error("timerfd_create failed");
+ 
         itimerspec its{};
-        its.it_value = toTimespec(cfg_.interval);
-        its.it_interval = toTimespec(cfg_.interval);
-
-        if (::timerfd_settime(timerfd_.get(), 0, &its, nullptr) < 0) {
-            throw std::runtime_error("timerfd_settime failed");
-        }
-
+        its.it_value    = toTimespec(interval_);
+        its.it_interval = toTimespec(interval_);
+        ::timerfd_settime(tfd_, 0, &its, nullptr);
+ 
         running_ = true;
         worker_ = std::thread([this] { run(); });
     }
-
+ 
     void stop() {
         if (!running_) return;
         running_ = false;
-
-        // Nudge timerfd so read unblocks quickly.
-        if (timerfd_) {
+ 
+        // Wake the blocked timerfd read immediately
+        if (tfd_ >= 0) {
             itimerspec its{};
             its.it_value.tv_nsec = 1;
-            ::timerfd_settime(timerfd_.get(), 0, &its, nullptr);
+            ::timerfd_settime(tfd_, 0, &its, nullptr);
         }
-
+ 
         if (worker_.joinable()) worker_.join();
-        timerfd_.reset();
+ 
+        if (tfd_ >= 0) { ::close(tfd_); tfd_ = -1; }
         bme_.reset();
     }
-
+ 
 private:
     static timespec toTimespec(std::chrono::milliseconds ms) {
         timespec ts{};
-        const auto count = ms.count();
-        ts.tv_sec = static_cast<time_t>(count / 1000);
-        ts.tv_nsec = static_cast<long>((count % 1000) * 1000000L);
+        ts.tv_sec  = ms.count() / 1000;
+        ts.tv_nsec = (ms.count() % 1000) * 1'000'000L;
         return ts;
     }
-
+ 
+    // Worker: blocks on timerfd read, then fires the callback (handout 3.3.3)
     void run() {
         while (running_) {
             uint64_t expirations = 0;
-            const ssize_t r = ::read(timerfd_.get(), &expirations, sizeof(expirations));
-            if (r < 0) continue;
+            if (::read(tfd_, &expirations, sizeof(expirations)) < 0) continue;
             if (!running_) break;
-
+ 
             try {
-                const auto sample = bme_->readSample();
+                const BME680Sample sample = bme_->readSample();
                 if (cb_) cb_(sample);
             } catch (const std::exception& e) {
                 std::cerr << "BME680 read error: " << e.what() << "\n";
             }
         }
     }
-
-    DemoSettings cfg_;
-    Callback cb_;
-
-    std::unique_ptr<BME680> bme_;
-    FileDescriptor timerfd_;
-    std::thread worker_;
-    std::atomic<bool> running_{false};
+ 
+    std::chrono::milliseconds interval_;
+    BME680Settings             sensor_settings_;
+    int                        i2c_bus_;
+    uint8_t                    i2c_addr_;
+    Callback                   cb_;
+ 
+    std::unique_ptr<BME680>    bme_;
+    int                        tfd_ = -1;
+    std::thread                worker_;
+    std::atomic<bool>          running_{false};
 };
-
-// -------------------------- Demo subscriber --------------------------
-
-class BME680Printer {
-public:
-    void onSample(const BME680Sample& s) {
-        std::cout
-            << "T="  << s.temperature_c << " °C, "
-            << "P="  << s.pressure_hpa  << " hPa, "
-            << "RH=" << s.humidity_rh   << " %, "
-            << "Gas="<< s.gas_ohms      << " ohms\n";
-    }
-};
-
+ 
+// ---------------------------------------------------------------------------
+// Signal handling so Ctrl+C cleanly stops the thread
+// ---------------------------------------------------------------------------
+ 
+static std::atomic<bool> g_quit{false};
+static void sigHandler(int) { g_quit = true; }
+ 
+// ---------------------------------------------------------------------------
+// main
+// ---------------------------------------------------------------------------
+ 
 int main() {
+    std::signal(SIGINT,  sigHandler);
+    std::signal(SIGTERM, sigHandler);
+ 
     try {
-        DemoSettings cfg;
-        cfg.i2c_bus = 1;
-        cfg.i2c_addr = 0x77; // change to 0x76 if your board uses that
-        cfg.interval = std::chrono::milliseconds(1000);
-
-        // Sensor tuning
-        cfg.sensor.osrs_t = 4; // x8
-        cfg.sensor.osrs_p = 3; // x4
-        cfg.sensor.osrs_h = 2; // x2
-        cfg.sensor.filter = 2;
-
-        cfg.sensor.enable_gas = true;
-        cfg.sensor.heater_temp_c = 320;
-        cfg.sensor.heater_time_ms = 150;
-        cfg.sensor.ambient_temp_c = 25;
-
-        BME680Sensor sensor(cfg);
+        BME680Settings settings;
+        settings.osrs_t        = 4;    // x8
+        settings.osrs_p        = 3;    // x4
+        settings.osrs_h        = 2;    // x2
+        settings.filter        = 2;
+        settings.enable_gas    = true;
+        settings.heater_temp_c = 320;
+        settings.heater_time_ms= 150;
+        settings.ambient_temp_c= 25;
+ 
+        BME680Sensor sensor(
+            /*i2c_bus=*/  1,
+            /*i2c_addr=*/ 0x76,   // change to 0x76 if your board uses that
+            /*interval=*/ std::chrono::milliseconds(1000),
+            settings
+        );
+ 
         BME680Printer printer;
-
-        // Latest sensor data shared between sensor thread and HTTP server
-        BME680Sample latestSample{};
-        std::mutex sampleMutex;
-
+ 
+        // Connect publisher -> subscriber with a lambda (handout 2.2.1)
         sensor.registerCallback([&](const BME680Sample& s) {
             printer.onSample(s);
-            std::lock_guard<std::mutex> lock(sampleMutex);
-            latestSample = s;
         });
+ 
         sensor.start();
-
-        // HTTP server — Flutter app calls these endpoints
-        httplib::Server svr;
-
-        svr.Get("/temperature", [&](const httplib::Request&, httplib::Response& res) {
-            std::lock_guard<std::mutex> lock(sampleMutex);
-            res.set_content("{\"temperature\":" + std::to_string(latestSample.temperature_c) + "}", "application/json");
-        });
-
-        svr.Get("/humidity", [&](const httplib::Request&, httplib::Response& res) {
-            std::lock_guard<std::mutex> lock(sampleMutex);
-            res.set_content("{\"humidity\":" + std::to_string(latestSample.humidity_rh) + "}", "application/json");
-        });
-
-        svr.Get("/lux", [&](const httplib::Request&, httplib::Response& res) {
-            res.set_content("{\"lux\":0.0}", "application/json");
-            // TODO: replace with real lux sensor reading when connected
-        });
-
-        svr.Get("/door", [&](const httplib::Request&, httplib::Response& res) {
-            res.set_content("{\"door_open\":false}", "application/json");
-            // TODO: replace with real door sensor reading when connected
-        });
-
-        svr.Get("/scanner", [&](const httplib::Request&, httplib::Response& res) {
-            res.set_content("{\"scanner_active\":false}", "application/json");
-            // TODO: replace with real scanner status when connected
-        });
-
-        std::cout << "BME680 running + HTTP server on port 5000...\n";
-        svr.listen("0.0.0.0", 5000);
-
+        std::cout << "BME680 running. Press Ctrl+C to stop.\n";
+ 
+        while (!g_quit) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+ 
+        sensor.stop();
     } catch (const std::exception& e) {
         std::cerr << "Fatal: " << e.what() << "\n";
         return 1;
     }
+ 
+    return 0;
 }
