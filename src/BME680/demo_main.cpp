@@ -2,7 +2,7 @@
 // Demonstrates BME680 using the callback pattern described in the RT coding handout.
 //
 // Build:
-//   g++ -std=c++17 -O2 -pthread \
+//   g++ -std=c++17 -O2 \
 //       demo_main.cpp BME680.cpp LinuxI2CDevice.cpp \
 //       -I../../include \
 //       -o bme680_demo
@@ -11,7 +11,7 @@
 //   ./bme680_demo
  
 #include "BME680.hpp"
-#include "LinuxI2CDevice.hpp"
+#include "../common/LinuxI2CDevice.hpp"
  
 #include <atomic>
 #include <chrono>
@@ -164,7 +164,7 @@ int main() {
  
         BME680Sensor sensor(
             /*i2c_bus=*/  1,
-            /*i2c_addr=*/ 0x77,   // change to 0x76 if your board uses that
+            /*i2c_addr=*/ 0x76,   // change to 0x76 if your board uses that
             /*interval=*/ std::chrono::milliseconds(1000),
             settings
         );
