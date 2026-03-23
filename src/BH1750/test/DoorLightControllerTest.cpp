@@ -1,42 +1,59 @@
+#include <cmath>
 #include <iostream>
-#include <vector>
 #include <string>
+#include <utility>
 
 #include "../include/DoorLightController.hpp"
+#include "../include/ILightSensor.hpp"
 
 class FakeLightSensor : public ILightSensor {
 public:
-    explicit FakeLightSensor(std::vector<double> luxSequence)
-        : lux_(std::move(luxSequence)), idx_(0) {}
+    void registerCallback(LightLevelCallback callback) override {
+        callback_ = std::move(callback);
+    }
 
-    double readLux() override {
-        if (lux_.empty()) return 0.0;
-        if (idx_ >= lux_.size()) return lux_.back();
-        return lux_[idx_++];
+    void start(int) override {
+    }
+
+    void stop() override {
+    }
+
+    void emit(double lux) {
+        if (callback_) {
+            callback_(lux);
+        }
     }
 
 private:
-    std::vector<double> lux_;
-    std::size_t idx_;
+    LightLevelCallback callback_;
 };
 
 class FakeGpioOutput : public IGpioOutput {
 public:
-    FakeGpioOutput() : high_(false), highCalls_(0), lowCalls_(0) {}
+    FakeGpioOutput() : high_(false), highCalls_(0), lowCalls_(0) {
+    }
 
     void setHigh() override {
         high_ = true;
-        highCalls_++;
+        ++highCalls_;
     }
 
     void setLow() override {
         high_ = false;
-        lowCalls_++;
+        ++lowCalls_;
     }
 
-    bool isHigh() const { return high_; }
-    int highCalls() const { return highCalls_; }
-    int lowCalls() const { return lowCalls_; }
+    bool isHigh() const {
+        return high_;
+    }
+
+    int highCalls() const {
+        return highCalls_;
+    }
+
+    int lowCalls() const {
+        return lowCalls_;
+    }
 
 private:
     bool high_;
@@ -44,87 +61,131 @@ private:
     int lowCalls_;
 };
 
-static int g_failures = 0;
-
-static void expectTrue(bool cond, const std::string& msg) {
-    if (!cond) {
-        std::cout << "FAIL: " << msg << "\n";
-        g_failures++;
-    }
-}
-
-static void expectEqInt(int a, int b, const std::string& msg) {
-    if (a != b) {
-        std::cout << "FAIL: " << msg << " expected " << b << " got " << a << "\n";
-        g_failures++;
-    }
-}
-
 int main() {
+    int failures = 0;
+
+    auto expectTrue = [&](bool cond, const std::string& msg) {
+        if (!cond) {
+            std::cout << "FAIL: " << msg << "\n";
+            ++failures;
+        }
+    };
+
+    auto expectEqInt = [&](int a, int b, const std::string& msg) {
+        if (a != b) {
+            std::cout << "FAIL: " << msg << " expected " << b << " got " << a << "\n";
+            ++failures;
+        }
+    };
+
+    auto expectNear = [&](double a, double b, const std::string& msg) {
+        if (std::fabs(a - b) > 1e-9) {
+            std::cout << "FAIL: " << msg << " expected " << b << " got " << a << "\n";
+            ++failures;
+        }
+    };
+
     {
-        FakeLightSensor sensor({0.0, 5.0, 9.0});
+        FakeLightSensor sensor;
         FakeGpioOutput gpio;
-        DoorLightController ctl(sensor, gpio, 30.0, 10.0);
+        DoorLightController controller(gpio, 30.0, 10.0);
 
-        ctl.update();
-        ctl.update();
-        ctl.update();
+        sensor.registerCallback([&controller](double lux) {
+            controller.hasLightSample(lux);
+        });
 
-        expectTrue(!ctl.isDoorOpen(), "door should remain closed under open threshold");
-        expectTrue(!gpio.isHigh(), "gpio should remain low when door is closed");
+        sensor.emit(0.0);
+        sensor.emit(5.0);
+        sensor.emit(9.0);
+
+        expectTrue(!controller.isDoorOpen(), "door should remain closed under open threshold");
+        expectTrue(!gpio.isHigh(), "gpio should remain low while door is closed");
         expectEqInt(gpio.highCalls(), 0, "setHigh should not be called");
         expectEqInt(gpio.lowCalls(), 0, "setLow should not be called");
+        expectNear(controller.lastLux(), 9.0, "lastLux should track the latest sample");
     }
 
     {
-        FakeLightSensor sensor({0.0, 31.0});
+        FakeLightSensor sensor;
         FakeGpioOutput gpio;
-        DoorLightController ctl(sensor, gpio, 30.0, 10.0);
+        DoorLightController controller(gpio, 30.0, 10.0);
 
-        ctl.update();
-        ctl.update();
+        int doorEvents = 0;
+        bool lastDoorState = false;
+        double lastEventLux = -1.0;
 
-        expectTrue(ctl.isDoorOpen(), "door should open when lux meets open threshold");
-        expectTrue(gpio.isHigh(), "gpio should be high when door is open");
+        controller.registerDoorStateCallback([&](bool isOpen, double lux) {
+            ++doorEvents;
+            lastDoorState = isOpen;
+            lastEventLux = lux;
+        });
+
+        sensor.registerCallback([&controller](double lux) {
+            controller.hasLightSample(lux);
+        });
+
+        sensor.emit(0.0);
+        sensor.emit(31.0);
+
+        expectTrue(controller.isDoorOpen(), "door should open when lux meets open threshold");
+        expectTrue(gpio.isHigh(), "gpio should be high after opening");
         expectEqInt(gpio.highCalls(), 1, "setHigh should be called once");
         expectEqInt(gpio.lowCalls(), 0, "setLow should not be called");
+        expectEqInt(doorEvents, 1, "door state callback should fire once on opening");
+        expectTrue(lastDoorState, "door state callback should report open");
+        expectNear(lastEventLux, 31.0, "door state callback should report latest opening lux");
     }
 
     {
-        FakeLightSensor sensor({35.0, 20.0, 11.0});
+        FakeLightSensor sensor;
         FakeGpioOutput gpio;
-        DoorLightController ctl(sensor, gpio, 30.0, 10.0);
+        DoorLightController controller(gpio, 30.0, 10.0);
 
-        ctl.update(); // open
-        ctl.update(); // still open between thresholds
-        ctl.update(); // still open above close threshold
+        sensor.registerCallback([&controller](double lux) {
+            controller.hasLightSample(lux);
+        });
 
-        expectTrue(ctl.isDoorOpen(), "door should remain open above close threshold");
-        expectTrue(gpio.isHigh(), "gpio should remain high while open");
-        expectEqInt(gpio.highCalls(), 1, "setHigh should be called once");
-        expectEqInt(gpio.lowCalls(), 0, "setLow should not be called");
+        sensor.emit(35.0);
+        sensor.emit(20.0);
+        sensor.emit(11.0);
+
+        expectTrue(controller.isDoorOpen(), "door should remain open above close threshold");
+        expectTrue(gpio.isHigh(), "gpio should stay high while still open");
+        expectEqInt(gpio.highCalls(), 1, "setHigh should still only be called once");
+        expectEqInt(gpio.lowCalls(), 0, "setLow should not be called yet");
     }
 
     {
-        FakeLightSensor sensor({35.0, 20.0, 9.0});
+        FakeLightSensor sensor;
         FakeGpioOutput gpio;
-        DoorLightController ctl(sensor, gpio, 30.0, 10.0);
+        DoorLightController controller(gpio, 30.0, 10.0);
 
-        ctl.update(); // open
-        ctl.update(); // still open
-        ctl.update(); // close
+        int doorEvents = 0;
 
-        expectTrue(!ctl.isDoorOpen(), "door should close when lux meets close threshold");
+        controller.registerDoorStateCallback([&](bool, double) {
+            ++doorEvents;
+        });
+
+        sensor.registerCallback([&controller](double lux) {
+            controller.hasLightSample(lux);
+        });
+
+        sensor.emit(35.0);
+        sensor.emit(20.0);
+        sensor.emit(9.0);
+
+        expectTrue(!controller.isDoorOpen(), "door should close when lux meets close threshold");
         expectTrue(!gpio.isHigh(), "gpio should be low after closing");
         expectEqInt(gpio.highCalls(), 1, "setHigh should be called once");
         expectEqInt(gpio.lowCalls(), 1, "setLow should be called once");
+        expectEqInt(doorEvents, 2, "door state callback should fire on open and close");
     }
 
-    if (g_failures == 0) {
+    if (failures == 0) {
         std::cout << "PASS\n";
         return 0;
     }
 
-    std::cout << "FAILURES: " << g_failures << "\n";
+    std::cout << "FAILURES: " << failures << "\n";
     return 1;
 }

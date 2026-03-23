@@ -1,10 +1,18 @@
 #include "Bh1750Sensor.hpp"
 
+#include <cerrno>
+#include <cstring>
+#include <iostream>
 #include <stdexcept>
+#include <utility>
 
 #include <fcntl.h>
-#include <unistd.h>
+#include <poll.h>
+#include <sys/eventfd.h>
 #include <sys/ioctl.h>
+#include <sys/timerfd.h>
+#include <unistd.h>
+
 #include <linux/i2c-dev.h>
 
 namespace {
@@ -17,8 +25,10 @@ constexpr double kLuxDivisor = 1.2;
 Bh1750Sensor::Bh1750Sensor(std::string i2cDevicePath, std::uint8_t i2cAddress)
     : fd_(-1),
       devPath_(std::move(i2cDevicePath)),
-      addr_(i2cAddress) {
-
+      addr_(i2cAddress),
+      callback_(),
+      running_(false),
+      stopFd_(-1) {
     fd_ = ::open(devPath_.c_str(), O_RDWR);
     if (fd_ < 0) {
         throw std::runtime_error("Bh1750Sensor open failed: " + devPath_);
@@ -33,29 +43,152 @@ Bh1750Sensor::Bh1750Sensor(std::string i2cDevicePath, std::uint8_t i2cAddress)
     writeCommand(kCmdPowerOn);
     writeCommand(kCmdReset);
     writeCommand(kCmdContinuousHighRes);
+
+    stopFd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+    if (stopFd_ < 0) {
+        ::close(fd_);
+        fd_ = -1;
+        throw std::runtime_error("Bh1750Sensor eventfd failed");
+    }
 }
 
 Bh1750Sensor::~Bh1750Sensor() {
+    stop();
+
+    if (stopFd_ >= 0) {
+        ::close(stopFd_);
+        stopFd_ = -1;
+    }
+
     if (fd_ >= 0) {
         ::close(fd_);
         fd_ = -1;
     }
 }
 
+void Bh1750Sensor::registerCallback(LightLevelCallback callback) {
+    std::lock_guard<std::mutex> lock(callbackMutex_);
+    callback_ = std::move(callback);
+}
+
+void Bh1750Sensor::start(int intervalMs) {
+    if (intervalMs <= 0) {
+        throw std::invalid_argument("intervalMs must be > 0");
+    }
+    if (running_) {
+        throw std::logic_error("Bh1750Sensor already running");
+    }
+
+    std::uint64_t drained = 0;
+    while (::read(stopFd_, &drained, sizeof(drained)) == static_cast<ssize_t>(sizeof(drained))) {
+    }
+
+    running_ = true;
+    worker_ = std::thread(&Bh1750Sensor::runLoop, this, intervalMs);
+}
+
+void Bh1750Sensor::stop() {
+    if (!running_) {
+        return;
+    }
+
+    running_ = false;
+
+    const std::uint64_t one = 1;
+    (void)::write(stopFd_, &one, sizeof(one));
+
+    if (worker_.joinable()) {
+        worker_.join();
+    }
+}
+
 void Bh1750Sensor::writeCommand(std::uint8_t cmd) {
-    int rc = ::write(fd_, &cmd, 1);
+    const int rc = ::write(fd_, &cmd, 1);
     if (rc != 1) {
         throw std::runtime_error("Bh1750Sensor write command failed");
     }
 }
 
-double Bh1750Sensor::readLux() {
+double Bh1750Sensor::readLuxOnce() {
     std::uint8_t buf[2] = {0, 0};
-    int rc = ::read(fd_, buf, 2);
+    const int rc = ::read(fd_, buf, 2);
     if (rc != 2) {
         throw std::runtime_error("Bh1750Sensor read failed");
     }
 
-    std::uint16_t raw = static_cast<std::uint16_t>(buf[0] << 8) | buf[1];
+    const std::uint16_t raw =
+        static_cast<std::uint16_t>((static_cast<std::uint16_t>(buf[0]) << 8) | buf[1]);
+
     return static_cast<double>(raw) / kLuxDivisor;
+}
+
+void Bh1750Sensor::runLoop(int intervalMs) {
+    const int tfd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC);
+    if (tfd < 0) {
+        std::cerr << "Bh1750Sensor timerfd_create failed\n";
+        running_ = false;
+        return;
+    }
+
+    itimerspec its{};
+    its.it_value.tv_sec = intervalMs / 1000;
+    its.it_value.tv_nsec = (intervalMs % 1000) * 1000000;
+    its.it_interval = its.it_value;
+
+    if (timerfd_settime(tfd, 0, &its, nullptr) != 0) {
+        std::cerr << "Bh1750Sensor timerfd_settime failed\n";
+        ::close(tfd);
+        running_ = false;
+        return;
+    }
+
+    pollfd fds[2]{};
+    fds[0].fd = tfd;
+    fds[0].events = POLLIN;
+    fds[1].fd = stopFd_;
+    fds[1].events = POLLIN;
+
+    while (running_) {
+        const int rc = ::poll(fds, 2, -1);
+        if (rc < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            std::cerr << "Bh1750Sensor poll failed: " << std::strerror(errno) << "\n";
+            break;
+        }
+
+        if (fds[1].revents & POLLIN) {
+            std::uint64_t stopValue = 0;
+            (void)::read(stopFd_, &stopValue, sizeof(stopValue));
+            break;
+        }
+
+        if (fds[0].revents & POLLIN) {
+            std::uint64_t expirations = 0;
+            if (::read(tfd, &expirations, sizeof(expirations)) != static_cast<ssize_t>(sizeof(expirations))) {
+                continue;
+            }
+
+            try {
+                const double lux = readLuxOnce();
+
+                LightLevelCallback callbackCopy;
+                {
+                    std::lock_guard<std::mutex> lock(callbackMutex_);
+                    callbackCopy = callback_;
+                }
+
+                if (callbackCopy) {
+                    callbackCopy(lux);
+                }
+            }
+            catch (const std::exception& e) {
+                std::cerr << "Bh1750Sensor sample error: " << e.what() << "\n";
+            }
+        }
+    }
+
+    ::close(tfd);
+    running_ = false;
 }
