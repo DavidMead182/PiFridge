@@ -15,14 +15,14 @@ static size_t write_cb(void* contents, size_t size, size_t nmemb, void* userp) {
     return total;
 }
 
-int main() {
+ void fetch_product(int number) {
     const std::string url =
-        "https://world.openfoodfacts.net/api/v2/product/3274080005003?fields=product_name";
+        "https://world.openfoodfacts.net/api/v2/product/" + std::to_string(number) + "?fields=product_name";
 
     CURL* curl = curl_easy_init();
     if (!curl) {
         std::cerr << "Failed to init curl\n";
-        return 1;
+        return;
     }
 
     std::string response;
@@ -33,7 +33,7 @@ int main() {
     // === equivalent of headers: { Authorization: "Basic " + btoa("off:off") } ===
     curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
     curl_easy_setopt(curl, CURLOPT_USERPWD, "off:off");
-
+    
     // capture response body
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
@@ -46,12 +46,12 @@ int main() {
     if (res != CURLE_OK) {
         std::cerr << "Request failed: " << curl_easy_strerror(res) << "\n";
         curl_easy_cleanup(curl);
-        return 1;
+        return;
     }
 
     curl_easy_cleanup(curl);
 
     std::cout << response << std::endl;
 
-    return 0;
+    return ;
 }
