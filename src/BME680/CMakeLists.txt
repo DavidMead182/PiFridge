@@ -1,5 +1,6 @@
 add_library(bme680
     BME680.cpp
+    BME680Sensor.cpp
 )
  
 target_include_directories(bme680
@@ -18,6 +19,5 @@ target_include_directories(bme680_demo
 target_link_libraries(bme680_demo
     PRIVATE bme680
     PRIVATE linux_i2c
-    PRIVATE pthread
 )
  
