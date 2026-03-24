@@ -1,5 +1,5 @@
 // demo_main.cpp
-// Demonstrates BME680 using the callback pattern described in the RT coding handout.
+// Demonstrates BME680 using the callback pattern.
 //
 // Build:
 //   g++ -std=c++17 -O2 \
@@ -7,7 +7,7 @@
 //       -I../../include \
 //       -o bme680_demo
 //
-// Run (needs i2c group or root):
+// Run:
 //   ./bme680_demo
  
 #include "BME680.hpp"
@@ -25,7 +25,7 @@
 #include <unistd.h>
  
 // ---------------------------------------------------------------------------
-// Subscriber: just prints the sample - knows nothing about I2C or threads
+// Subscriber: just prints the sample
 // ---------------------------------------------------------------------------
  
 class BME680Printer {
@@ -41,7 +41,7 @@ public:
  
 // ---------------------------------------------------------------------------
 // Evented sensor wrapper: owns thread + timerfd, fires callback each interval
-// As per handout: blocking I/O (timerfd read) drives the timing.
+// blocking I/O (timerfd read) drives the timing.
 // ---------------------------------------------------------------------------
  
 class BME680Sensor {
@@ -65,12 +65,12 @@ public:
     void start() {
         if (running_) return;
  
-        // Create sensor - inject the Linux I2C implementation
+        // Create sensor
         auto dev = std::make_unique<LinuxI2CDevice>(i2c_bus_, i2c_addr_);
         bme_ = std::make_unique<BME680>(std::move(dev));
         bme_->initialize(sensor_settings_);
  
-        // Set up timerfd for reliable interval timing (see handout section 3.4)
+        // Set up timerfd for interval timing
         tfd_ = ::timerfd_create(CLOCK_MONOTONIC, 0);
         if (tfd_ < 0) throw std::runtime_error("timerfd_create failed");
  
@@ -108,7 +108,7 @@ private:
         return ts;
     }
  
-    // Worker: blocks on timerfd read, then fires the callback (handout 3.3.3)
+    // Worker: blocks on timerfd read, then the callback runs
     void run() {
         while (running_) {
             uint64_t expirations = 0;
@@ -164,14 +164,14 @@ int main() {
  
         BME680Sensor sensor(
             /*i2c_bus=*/  1,
-            /*i2c_addr=*/ 0x76,   // change to 0x76 if your board uses that
+            /*i2c_addr=*/ 0x76,
             /*interval=*/ std::chrono::milliseconds(1000),
             settings
         );
  
         BME680Printer printer;
  
-        // Connect publisher -> subscriber with a lambda (handout 2.2.1)
+        // Connect publisher -> subscriber with a lambda
         sensor.registerCallback([&](const BME680Sample& s) {
             printer.onSample(s);
         });
