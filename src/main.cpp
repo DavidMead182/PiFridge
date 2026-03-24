@@ -1,5 +1,4 @@
-#include "BME680.hpp"
-#include "LinuxI2CDevice.hpp"
+#include "BME680Sensor.hpp"
  
 #include <atomic>
 #include <chrono>
@@ -58,6 +57,34 @@ int main() {
             << "RH="  << sample.humidity_rh   << "%  "
             << "Gas=" << sample.gas_ohms      << "ohm\n";
     });
+
+
+    bme680.start();
+    std::cout << "PiFridge: Sensor Thread Started" << std::endl;
+
+    // door.start()
+    // sever.start()
+    
+    std::cout << "PiFridge running. Press Ctrl+C to stop.\n";
+
+    while (!g_quit) {
+    
+        //PLace in logic here
+    }
+
+
+
+
+
+
+
+
+    
+
+    std::cout << "\nPiFridge shutting down...\n";
+    bme680.stop();
+    // server.stop();
+    // door.stop();
 
     // -- BME680 sensor setup --
     // Start up web server
