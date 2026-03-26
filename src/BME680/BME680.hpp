@@ -1,6 +1,6 @@
 #pragma once
 
-#include "II2CDevice.hpp"
+#include "../../include/II2CDevice.hpp"
 
 #include <chrono>
 #include <cstdint>

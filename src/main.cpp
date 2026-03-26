@@ -7,9 +7,9 @@
 //   sudo ./build/src/pifridge
 
 #include "BME680Sensor.hpp"
-#include "Bh1750Sensor.hpp"
-#include "DoorLightController.hpp"
-#include "GpioOutput.hpp"
+#include "BH1750/include/Bh1750Sensor.hpp"
+#include "BH1750/include/DoorLightController.hpp"
+#include "BH1750/include/GpioOutput.hpp"
  
 #include <atomic>
 #include <chrono>

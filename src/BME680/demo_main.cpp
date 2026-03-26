@@ -47,7 +47,7 @@ int main() {
         settings.heater_time_ms = 150;
         settings.ambient_temp_c = 25;
  
-        BME680Sensor sensor(1, 0x77,
+        BME680Sensor sensor(1, 0x76,
                             std::chrono::milliseconds(1000),
                             settings);
         BME680Printer printer;
