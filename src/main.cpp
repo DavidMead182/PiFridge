@@ -10,7 +10,8 @@
 #include "BH1750/include/Bh1750Sensor.hpp"
 #include "BH1750/include/DoorLightController.hpp"
 #include "BH1750/include/GpioOutput.hpp"
- 
+#include <fstream>
+#include <iomanip> 
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -22,8 +23,26 @@ struct FridgeState {
     BME680Sample    vitals{};
     bool            door_open = false;
     std::mutex      mutex;
+    double          lux = 0.0;
 };
 
+
+// hANDSHAKE FUNCTION
+// writes the JSON file that the API will serve to the PIFRIDGE app 
+void saveStateToJson(const FridgeState& state) {
+    // We create the file in the current working directory (usually /build)
+    std::ofstream outFile("fridge_data.json");
+    if (outFile.is_open()) {
+        outFile << "{\n"
+                << "  \"temperature\": " << std::fixed << std::setprecision(2) << state.vitals.temperature_c << ",\n"
+                << "  \"humidity\": " << state.vitals.humidity_rh << ",\n"
+                << "  \"pressure\": " << state.vitals.pressure_hpa << ",\n"
+                << "  \"lux\": " << state.lux << ",\n"
+                << "  \"door_open\": " << (state.door_open ? "true" : "false") << "\n"
+                << "}";
+        outFile.close();
+    }
+}
 // ---------------------------------------------------------------------------
 // Signal handling - Ctrl+C shuts everything down cleanly
 // ---------------------------------------------------------------------------
@@ -31,18 +50,19 @@ struct FridgeState {
 static std::atomic<bool> g_quit{false};
 static void sigHandler(int) { g_quit = true; }
 
-// ---------------------------------------------------------------------------
-// main
-// ---------------------------------------------------------------------------
-
 int main() {
     std::signal(SIGINT,  sigHandler);
     std::signal(SIGTERM, sigHandler);
 
-    std::cout << "PiFridge Starting Up" << std::endl;
-
     // -- Shared state --
     FridgeState state;
+
+// ---------------------------------------------------------------------------
+// main
+// ---------------------------------------------------------------------------
+
+    // -- Shared state --
+    
     BME680Settings sensorSettings;
     sensorSettings.osrs_t         = 4;
     sensorSettings.osrs_p         = 3;
@@ -64,6 +84,7 @@ int main() {
         {
             std::lock_guard<std::mutex> lock(state.mutex);
             state.vitals = sample;
+            saveStateToJson(state); // Export to JSON whenever climate updates
         }
         std::cout
             << "[BME680] "
@@ -94,6 +115,8 @@ int main() {
         {
             std::lock_guard<std::mutex> lock(state.mutex);
             state.door_open = isOpen;
+            state.lux = lux;
+            saveStateToJson(state); // Export to JSON whenever door state changes
         }
  
         if (isOpen) {
