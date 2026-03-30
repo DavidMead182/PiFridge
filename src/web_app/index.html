@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiFridge</title>
+</head>
+<body>
+
+    <h1>PiFridge</h1>
+
+    <!-- Door State -->
+    <section>
+        <h2>Door</h2>
+        <p>Status: <span id="door-state">--</span></p>
+        <p>Light (lux): <span id="lux">--</span></p>
+    </section>
+
+    <!-- Fridge Vitals -->
+    <section>
+        <h2>Vitals</h2>
+        <p>Temperature: <span id="temperature">--</span> &deg;C</p>
+        <p>Humidity: <span id="humidity">--</span> %</p>
+        <p>Pressure: <span id="pressure">--</span> hPa</p>
+    </section>
+
+    <!-- Connection Status -->
+    <section>
+        <h2>Connection</h2>
+        <p>Status: <span id="connection-status">Connecting...</span></p>
+        <p>Last updated: <span id="last-updated">--</span></p>
+    </section>
+
+    <script>
+        // ---------------------------------------------------------------------------
+        // Config — change POLL_URL if the nginx location block path changes
+        // ---------------------------------------------------------------------------
+        const POLL_URL      = "/api/fridge";
+        const POLL_INTERVAL = 1000; // ms — matches BME680 + door callback cadence
+
+        // ---------------------------------------------------------------------------
+        // DOM refs
+        // ---------------------------------------------------------------------------
+        const elDoorState   = document.getElementById("door-state");
+        const elLux         = document.getElementById("lux");
+        const elTemperature = document.getElementById("temperature");
+        const elHumidity    = document.getElementById("humidity");
+        const elPressure    = document.getElementById("pressure");
+        const elConnStatus  = document.getElementById("connection-status");
+        const elLastUpdated = document.getElementById("last-updated");
+
+        // ---------------------------------------------------------------------------
+        // Render — maps the JSON written by saveStateToJson() in main.cpp
+        //   { temperature, humidity, pressure, lux, door_open }
+        // ---------------------------------------------------------------------------
+        function render(data) {
+            elTemperature.textContent = data.temperature.toFixed(2);
+            elHumidity.textContent    = data.humidity.toFixed(2);
+            elPressure.textContent    = data.pressure.toFixed(2);
+            elLux.textContent         = data.lux.toFixed(2);
+            elDoorState.textContent   = data.door_open ? "Open" : "Closed";
+            elLastUpdated.textContent = new Date().toLocaleTimeString();
+            elConnStatus.textContent  = "OK";
+        }
+
+        // ---------------------------------------------------------------------------
+        // Poll — client-initiated GET to FastCGI endpoint via nginx
+        // Follows the REST/statelessness principle from the course notes:
+        // each request is self-contained and does not alter server state.
+        // ---------------------------------------------------------------------------
+        function poll() {
+            fetch(POLL_URL)
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error("HTTP " + response.status);
+                    }
+                    return response.json();
+                })
+                .then(function(data) {
+                    render(data);
+                })
+                .catch(function(err) {
+                    elConnStatus.textContent = "Error: " + err.message;
+                });
+        }
+
+        // ---------------------------------------------------------------------------
+        // Start polling on page load — mirrors the JS timer pattern from the notes:
+        // setInterval drives the refresh rate; the server is never pushed to.
+        // ---------------------------------------------------------------------------
+        window.addEventListener("load", function() {
+            poll(); // immediate first fetch
+            setInterval(poll, POLL_INTERVAL);
+        });
+    </script>
+
+</body>
+</html>

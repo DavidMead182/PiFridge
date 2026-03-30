@@ -31,7 +31,7 @@ struct FridgeState {
 // writes the JSON file that the API will serve to the PIFRIDGE app 
 void saveStateToJson(const FridgeState& state) {
     // We create the file in the current working directory (usually /build)
-    std::ofstream outFile("fridge_data.json");
+    std::ofstream outFile("/tmp/fridge_data.json");
     if (outFile.is_open()) {
         outFile << "{\n"
                 << "  \"temperature\": " << std::fixed << std::setprecision(2) << state.vitals.temperature_c << ",\n"

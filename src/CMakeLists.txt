@@ -1,6 +1,8 @@
 add_subdirectory(common)   
 add_subdirectory(BME680)
 add_subdirectory(BH1750)
+add_subdirectory(web_app)
+ 
 add_subdirectory(BarcodeScanner)
 
 # -- PiFridge main executable --
