@@ -1,0 +1,17 @@
+/home/pifridge/PiFridge/src/BME680/CMakeFiles/pifridge.dir
+/home/pifridge/PiFridge/src/BME680/CMakeFiles/edit_cache.dir
+/home/pifridge/PiFridge/src/BME680/CMakeFiles/rebuild_cache.dir
+/home/pifridge/PiFridge/src/BME680/common/CMakeFiles/linux_i2c.dir
+/home/pifridge/PiFridge/src/BME680/common/CMakeFiles/edit_cache.dir
+/home/pifridge/PiFridge/src/BME680/common/CMakeFiles/rebuild_cache.dir
+/home/pifridge/PiFridge/src/BME680/BME680/CMakeFiles/bme680.dir
+/home/pifridge/PiFridge/src/BME680/BME680/CMakeFiles/bme680_demo.dir
+/home/pifridge/PiFridge/src/BME680/BME680/CMakeFiles/edit_cache.dir
+/home/pifridge/PiFridge/src/BME680/BME680/CMakeFiles/rebuild_cache.dir
+/home/pifridge/PiFridge/src/BME680/BH1750/CMakeFiles/pifridge_light_logic.dir
+/home/pifridge/PiFridge/src/BME680/BH1750/CMakeFiles/door_light_controller_test.dir
+/home/pifridge/PiFridge/src/BME680/BH1750/CMakeFiles/edit_cache.dir
+/home/pifridge/PiFridge/src/BME680/BH1750/CMakeFiles/rebuild_cache.dir
+/home/pifridge/PiFridge/src/BME680/web_app/CMakeFiles/pifridge_web.dir
+/home/pifridge/PiFridge/src/BME680/web_app/CMakeFiles/edit_cache.dir
+/home/pifridge/PiFridge/src/BME680/web_app/CMakeFiles/rebuild_cache.dir

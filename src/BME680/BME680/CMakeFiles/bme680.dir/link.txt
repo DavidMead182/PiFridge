@@ -1,0 +1,2 @@
+/usr/bin/ar qc libbme680.a CMakeFiles/bme680.dir/BME680.o CMakeFiles/bme680.dir/BME680Sensor.o
+/usr/bin/ranlib libbme680.a

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libpifridge_light_logic.a CMakeFiles/pifridge_light_logic.dir/ILightSensor.o CMakeFiles/pifridge_light_logic.dir/DoorLightController.o
+/usr/bin/ranlib libpifridge_light_logic.a
