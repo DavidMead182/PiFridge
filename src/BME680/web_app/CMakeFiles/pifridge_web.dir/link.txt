@@ -1,2 +1,0 @@
-/usr/bin/ar qc libpifridge_web.a CMakeFiles/pifridge_web.dir/FridgeWebServer.o
-/usr/bin/ranlib libpifridge_web.a

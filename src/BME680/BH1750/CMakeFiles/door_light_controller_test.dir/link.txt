@@ -1,1 +1,0 @@
-/usr/bin/c++ -rdynamic -Wl,--dependency-file=CMakeFiles/door_light_controller_test.dir/link.d CMakeFiles/door_light_controller_test.dir/test/DoorLightControllerTest.o -o door_light_controller_test  libpifridge_light_logic.a

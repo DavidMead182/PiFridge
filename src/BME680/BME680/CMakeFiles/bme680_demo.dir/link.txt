@@ -1,1 +1,0 @@
-/usr/bin/c++ -rdynamic -Wl,--dependency-file=CMakeFiles/bme680_demo.dir/link.d CMakeFiles/bme680_demo.dir/demo_main.o -o bme680_demo  libbme680.a ../common/liblinux_i2c.a
