@@ -1,5 +1,5 @@
 #include "BME680Sensor.hpp"
-#include "LinuxI2CDevice.hpp"
+#include "../common/LinuxI2CDevice.hpp"
  
 #include <iostream>
 #include <stdexcept>
