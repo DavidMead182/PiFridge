@@ -1,9 +1,9 @@
 #pragma once
  
-#include "../../include/II2CDevice.hpp"
+#include "II2CDevice.hpp"
  
 // Concrete Linux implementation of II2CDevice.
-// Lives in src/common/ so it can be shared by all sensor modules.
+
 #include <cstdint>
 #include <string>
  
