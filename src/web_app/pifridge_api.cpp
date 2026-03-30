@@ -16,7 +16,7 @@
 static const char* JSON_PATH   = "/tmp/fridge_data.json";
 
 // Must match fastcgi_pass in config/pifridge.conf
-static const char* SOCKET_PATH = "/tmp/pifridge_socket";
+static const char* SOCKET_PATH = "/var/run/pifridge/pifridge.sock";
 
 int main() {
     // Initialise the FastCGI library
