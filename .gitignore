@@ -46,3 +46,6 @@ rpicam-apps/
 
 # Top-level build output
 build/
+
+# VS Code workspace/settings
+.vscode/
