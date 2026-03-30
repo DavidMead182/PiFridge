@@ -5,6 +5,11 @@ PiFridge is a Raspberry Pi-powered system that scans food barcodes in real time 
 
 Designed as a real-time embedded system for Uni Coursework.
 
+
+## Command For Dependencies
+
+sudo apt install pkg-config libgpiod-dev libcurl4-openssl-dev build-essential cmake
+
 ## Demo
 
 
