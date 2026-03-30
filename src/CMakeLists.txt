@@ -1,6 +1,7 @@
 add_subdirectory(common)   # linux_i2c built first - sensors depend on it
 add_subdirectory(BME680)
 add_subdirectory(BH1750)
+add_subdirectory(web_app)
  
 # -- PiFridge main executable --
 add_executable(pifridge main.cpp)
