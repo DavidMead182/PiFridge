@@ -4,70 +4,441 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PiFridge</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:         #eef3f7;
+            --panel:      #ffffff;
+            --border:     #dce4ed;
+            --text:       #1a2332;
+            --muted:      #7a8fa6;
+            --accent:     #3b82f6;
+            --open:       #ef4444;
+            --closed:     #22c55e;
+            --cold:       #bfdbfe;
+            --shelf:      #d4e0ec;
+            --radius:     16px;
+            --mono:       'DM Mono', monospace;
+            --sans:       'DM Sans', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--sans);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px 16px 40px;
+            /* subtle cold gradient — like the inside of a fridge */
+            background: linear-gradient(160deg, #ddeeff 0%, #eef3f7 40%, #f0f4f8 100%);
+        }
+
+        /* ---------------------------------------------------------------------------
+           Header
+        --------------------------------------------------------------------------- */
+        header {
+            text-align: center;
+            margin-bottom: 32px;
+            animation: fadeDown 0.5s ease both;
+        }
+
+        header h1 {
+            font-family: var(--mono);
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text);
+        }
+
+        header p {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 4px;
+            letter-spacing: 0.05em;
+        }
+
+        /* ---------------------------------------------------------------------------
+           Layout — single column, max width centered
+        --------------------------------------------------------------------------- */
+        .container {
+            max-width: 560px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* ---------------------------------------------------------------------------
+           Card
+        --------------------------------------------------------------------------- */
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: 0 2px 12px rgba(59,130,246,0.06);
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .card:nth-child(2) { animation-delay: 0.05s; }
+        .card:nth-child(3) { animation-delay: 0.10s; }
+        .card:nth-child(4) { animation-delay: 0.15s; }
+        .card:nth-child(5) { animation-delay: 0.20s; }
+
+        .card-label {
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        /* ---------------------------------------------------------------------------
+           Door status card
+        --------------------------------------------------------------------------- */
+        .door-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .door-state {
+            font-family: var(--mono);
+            font-size: 1.6rem;
+            font-weight: 500;
+            transition: color 0.4s ease;
+        }
+
+        .door-state.open   { color: var(--open); }
+        .door-state.closed { color: var(--closed); }
+
+        .door-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--closed);
+            transition: background 0.4s ease;
+            box-shadow: 0 0 0 4px rgba(34,197,94,0.15);
+        }
+
+        .door-indicator.open {
+            background: var(--open);
+            box-shadow: 0 0 0 4px rgba(239,68,68,0.15);
+        }
+
+        .door-lux {
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        /* ---------------------------------------------------------------------------
+           Vitals grid
+        --------------------------------------------------------------------------- */
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .vital-item {
+            background: linear-gradient(135deg, #f0f7ff, #e8f2fc);
+            border: 1px solid var(--cold);
+            border-radius: 12px;
+            padding: 14px 12px;
+            text-align: center;
+        }
+
+        .vital-value {
+            font-family: var(--mono);
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .vital-unit {
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .vital-label {
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: 6px;
+            letter-spacing: 0.04em;
+        }
+
+        /* ---------------------------------------------------------------------------
+           Inventory
+        --------------------------------------------------------------------------- */
+        .add-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .add-form-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .add-form input {
+            flex: 1;
+            font-family: var(--sans);
+            font-size: 0.85rem;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .add-form input:focus {
+            border-color: var(--accent);
+        }
+
+        .add-form input[type="number"] {
+            width: 72px;
+            flex: none;
+        }
+
+        .btn-add {
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            letter-spacing: 0.06em;
+            padding: 9px 18px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .btn-add:hover  { opacity: 0.88; }
+        .btn-add:active { transform: scale(0.97); }
+
+        .add-status {
+            font-size: 0.78rem;
+            color: var(--muted);
+            min-height: 1em;
+            font-family: var(--mono);
+        }
+
+        /* Shelf-style inventory list */
+        .inventory-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .inventory-empty {
+            font-size: 0.85rem;
+            color: var(--muted);
+            text-align: center;
+            padding: 20px 0;
+            font-family: var(--mono);
+        }
+
+        .inventory-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(90deg, #f5f9ff, #eef3f7);
+            border: 1px solid var(--shelf);
+            border-radius: 10px;
+            padding: 11px 14px;
+            animation: fadeUp 0.25s ease both;
+        }
+
+        .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .item-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .item-meta {
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--muted);
+        }
+
+        .item-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .item-qty {
+            font-family: var(--mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            background: #eff6ff;
+            border: 1px solid var(--cold);
+            border-radius: 6px;
+            padding: 2px 8px;
+        }
+
+        .btn-delete {
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            color: var(--muted);
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 8px;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        .btn-delete:hover {
+            color: var(--open);
+            border-color: var(--open);
+        }
+
+        /* ---------------------------------------------------------------------------
+           Footer / connection status
+        --------------------------------------------------------------------------- */
+        .footer-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .conn-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--closed);
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        .conn-dot.error { background: var(--open); }
+
+        .conn-text {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        .last-updated {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        /* ---------------------------------------------------------------------------
+           Animations
+        --------------------------------------------------------------------------- */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
 
-    <h1>PiFridge</h1>
+    <header>
+        <h1>PiFridge</h1>
+        <p>Smart Fridge Monitor</p>
+    </header>
 
-    <!-- Door State & Vitals -->
-    <section>
-        <h2>Door</h2>
-        <p>Status: <span id="door-state">--</span></p>
-        <p>Light (lux): <span id="lux">--</span></p>
-    </section>
+    <div class="container">
 
-    <section>
-        <h2>Vitals</h2>
-        <p>Temperature: <span id="temperature">--</span> &deg;C</p>
-        <p>Humidity: <span id="humidity">--</span> %</p>
-        <p>Pressure: <span id="pressure">--</span> hPa</p>
-    </section>
-
-    <section>
-        <h2>Connection</h2>
-        <p>Status: <span id="connection-status">Connecting...</span></p>
-        <p>Last updated: <span id="last-updated">--</span></p>
-    </section>
-
-    <!-- Inventory -->
-    <section>
-        <h2>Fridge Contents</h2>
-
-        <!-- Add item form -->
-        <div>
-            <h3>Add Item</h3>
-            <label>
-                Name:
-                <input type="text" id="input-name" placeholder="e.g. Milk">
-            </label>
-            <label>
-                Barcode:
-                <input type="text" id="input-barcode" placeholder="e.g. 5000112637922">
-            </label>
-            <label>
-                Quantity:
-                <input type="number" id="input-quantity" value="1" min="1">
-            </label>
-            <button onclick="addItem()">Add</button>
-            <p id="add-status"></p>
+        <!-- Door Status -->
+        <div class="card" style="animation-delay:0s">
+            <div class="card-label">Door</div>
+            <div class="door-card">
+                <div>
+                    <div class="door-state closed" id="door-state">Closed</div>
+                    <div class="door-lux">Lux: <span id="lux">--</span></div>
+                </div>
+                <div class="door-indicator" id="door-indicator"></div>
+            </div>
         </div>
 
-        <!-- Inventory table -->
-        <table id="inventory-table" border="1">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Barcode</th>
-                    <th>Quantity</th>
-                    <th>Date Added</th>
-                    <th>Remove</th>
-                </tr>
-            </thead>
-            <tbody id="inventory-body">
-                <tr><td colspan="5">Loading...</td></tr>
-            </tbody>
-        </table>
-    </section>
+        <!-- Vitals -->
+        <div class="card">
+            <div class="card-label">Vitals</div>
+            <div class="vitals-grid">
+                <div class="vital-item">
+                    <div class="vital-value" id="temperature">--</div>
+                    <div class="vital-unit">&deg;C</div>
+                    <div class="vital-label">Temp</div>
+                </div>
+                <div class="vital-item">
+                    <div class="vital-value" id="humidity">--</div>
+                    <div class="vital-unit">%</div>
+                    <div class="vital-label">Humidity</div>
+                </div>
+                <div class="vital-item">
+                    <div class="vital-value" id="pressure">--</div>
+                    <div class="vital-unit">hPa</div>
+                    <div class="vital-label">Pressure</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory -->
+        <div class="card">
+            <div class="card-label">Fridge Contents</div>
+
+            <div class="add-form">
+                <div class="add-form-row">
+                    <input type="text"   id="input-name"     placeholder="Item name">
+                    <input type="text"   id="input-barcode"  placeholder="Barcode">
+                    <input type="number" id="input-quantity" value="1" min="1">
+                    <button class="btn-add" onclick="addItem()">Add</button>
+                </div>
+                <div class="add-status" id="add-status"></div>
+            </div>
+
+            <div class="inventory-list" id="inventory-list">
+                <div class="inventory-empty">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Footer / Connection -->
+        <div class="card footer-card">
+            <div class="conn-text">
+                <span class="conn-dot" id="conn-dot"></span>
+                <span id="connection-status">Connecting...</span>
+            </div>
+            <div class="last-updated">Updated: <span id="last-updated">--</span></div>
+        </div>
+
+    </div>
 
     <script>
         // ---------------------------------------------------------------------------
@@ -75,30 +446,30 @@
         // ---------------------------------------------------------------------------
         const VITALS_URL    = "/api/fridge";
         const INVENTORY_URL = "/api/inventory";
-        const POLL_INTERVAL = 1000; // ms
+        const POLL_INTERVAL = 1000;
 
         // ---------------------------------------------------------------------------
-        // DOM refs — vitals
-        // ---------------------------------------------------------------------------
-        const elDoorState   = document.getElementById("door-state");
-        const elLux         = document.getElementById("lux");
-        const elTemperature = document.getElementById("temperature");
-        const elHumidity    = document.getElementById("humidity");
-        const elPressure    = document.getElementById("pressure");
-        const elConnStatus  = document.getElementById("connection-status");
-        const elLastUpdated = document.getElementById("last-updated");
-
-        // ---------------------------------------------------------------------------
-        // Vitals polling — GET /api/fridge every second
+        // Vitals
         // ---------------------------------------------------------------------------
         function renderVitals(data) {
-            elTemperature.textContent = data.temperature.toFixed(2);
-            elHumidity.textContent    = data.humidity.toFixed(2);
-            elPressure.textContent    = data.pressure.toFixed(2);
-            elLux.textContent         = data.lux.toFixed(2);
-            elDoorState.textContent   = data.door_open ? "Open" : "Closed";
-            elLastUpdated.textContent = new Date().toLocaleTimeString();
-            elConnStatus.textContent  = "OK";
+            document.getElementById("temperature").textContent = data.temperature.toFixed(1);
+            document.getElementById("humidity").textContent    = data.humidity.toFixed(1);
+            document.getElementById("pressure").textContent    = data.pressure.toFixed(0);
+            document.getElementById("lux").textContent         = data.lux.toFixed(1);
+
+            var doorEl   = document.getElementById("door-state");
+            var dotEl    = document.getElementById("door-indicator");
+            var isOpen   = data.door_open;
+
+            doorEl.textContent = isOpen ? "Open" : "Closed";
+            doorEl.className   = "door-state " + (isOpen ? "open" : "closed");
+            dotEl.className    = "door-indicator" + (isOpen ? " open" : "");
+
+            document.getElementById("last-updated").textContent = new Date().toLocaleTimeString();
+
+            var connDot = document.getElementById("conn-dot");
+            connDot.className = "conn-dot";
+            document.getElementById("connection-status").textContent = "Connected";
         }
 
         function pollVitals() {
@@ -109,32 +480,39 @@
                 })
                 .then(renderVitals)
                 .catch(function(err) {
-                    elConnStatus.textContent = "Error: " + err.message;
+                    document.getElementById("conn-dot").className = "conn-dot error";
+                    document.getElementById("connection-status").textContent = "Error: " + err.message;
                 });
         }
 
         // ---------------------------------------------------------------------------
-        // Inventory — GET /api/inventory
-        // Renders the table of items with a delete button per row
+        // Inventory
         // ---------------------------------------------------------------------------
         function renderInventory(items) {
-            var tbody = document.getElementById("inventory-body");
-            tbody.innerHTML = "";
+            var list = document.getElementById("inventory-list");
+            list.innerHTML = "";
 
-            if (items.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='5'>No items in fridge.</td></tr>";
+            if (!items || items.length === 0) {
+                list.innerHTML = "<div class='inventory-empty'>Nothing in the fridge yet.</div>";
                 return;
             }
 
             items.forEach(function(item) {
-                var row = document.createElement("tr");
-                row.innerHTML =
-                    "<td>" + item.name        + "</td>" +
-                    "<td>" + item.barcode     + "</td>" +
-                    "<td>" + item.quantity    + "</td>" +
-                    "<td>" + item.date_added  + "</td>" +
-                    "<td><button onclick='deleteItem(" + item.id + ")'>Delete</button></td>";
-                tbody.appendChild(row);
+                var el = document.createElement("div");
+                el.className = "inventory-item";
+                el.innerHTML =
+                    "<div class='item-info'>" +
+                        "<div class='item-name'>" + item.name + "</div>" +
+                        "<div class='item-meta'>" +
+                            (item.barcode ? item.barcode + " &middot; " : "") +
+                            "Added " + item.date_added +
+                        "</div>" +
+                    "</div>" +
+                    "<div class='item-right'>" +
+                        "<span class='item-qty'>x" + item.quantity + "</span>" +
+                        "<button class='btn-delete' onclick='deleteItem(" + item.id + ")'>Remove</button>" +
+                    "</div>";
+                list.appendChild(el);
             });
         }
 
@@ -146,25 +524,18 @@
                 })
                 .then(renderInventory)
                 .catch(function(err) {
-                    document.getElementById("inventory-body").innerHTML =
-                        "<tr><td colspan='5'>Error: " + err.message + "</td></tr>";
+                    document.getElementById("inventory-list").innerHTML =
+                        "<div class='inventory-empty'>Error: " + err.message + "</div>";
                 });
         }
 
-        // ---------------------------------------------------------------------------
-        // Add item — POST /api/inventory
-        // Follows course notes section 6.4.4: client sends JSON to server via POST
-        // ---------------------------------------------------------------------------
         function addItem() {
             var name     = document.getElementById("input-name").value.trim();
             var barcode  = document.getElementById("input-barcode").value.trim();
             var quantity = parseInt(document.getElementById("input-quantity").value) || 1;
             var status   = document.getElementById("add-status");
 
-            if (!name) {
-                status.textContent = "Name is required.";
-                return;
-            }
+            if (!name) { status.textContent = "Name is required."; return; }
 
             fetch(INVENTORY_URL, {
                 method: "POST",
@@ -178,19 +549,15 @@
                     document.getElementById("input-name").value     = "";
                     document.getElementById("input-barcode").value  = "";
                     document.getElementById("input-quantity").value = 1;
-                    fetchInventory(); // refresh table
+                    setTimeout(function() { status.textContent = ""; }, 2000);
+                    fetchInventory();
                 } else {
                     status.textContent = "Error: " + (data.error || "unknown");
                 }
             })
-            .catch(function(err) {
-                status.textContent = "Error: " + err.message;
-            });
+            .catch(function(err) { status.textContent = "Error: " + err.message; });
         }
 
-        // ---------------------------------------------------------------------------
-        // Delete item — POST /api/inventory/delete
-        // ---------------------------------------------------------------------------
         function deleteItem(id) {
             fetch(INVENTORY_URL + "/delete", {
                 method: "POST",
@@ -199,26 +566,19 @@
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (data.success) {
-                    fetchInventory(); // refresh table
-                } else {
-                    alert("Delete failed: " + (data.error || "unknown"));
-                }
+                if (data.success) { fetchInventory(); }
             })
-            .catch(function(err) {
-                alert("Delete error: " + err.message);
-            });
+            .catch(function(err) { console.error("Delete error:", err); });
         }
 
         // ---------------------------------------------------------------------------
-        // Start on page load
+        // Start
         // ---------------------------------------------------------------------------
         window.addEventListener("load", function() {
             pollVitals();
             setInterval(pollVitals, POLL_INTERVAL);
-
             fetchInventory();
-            setInterval(fetchInventory, 5000); // refresh inventory every 5 seconds
+            setInterval(fetchInventory, 5000);
         });
     </script>
 
