@@ -577,8 +577,7 @@
         window.addEventListener("load", function() {
             pollVitals();
             setInterval(pollVitals, POLL_INTERVAL);
-            fetchInventory();
-            setInterval(fetchInventory, 5000);
+            fetchInventory(); // fetch once on load, then only on add/delete
         });
     </script>
 
