@@ -8,7 +8,7 @@ Designed as a real-time embedded system for Uni Coursework.
 
 ## Command For Dependencies
 
-sudo apt install pkg-config libgpiod-dev libcurl4-openssl-dev build-essential cmake
+sudo apt install pkg-config libgpiod-dev libcurl4-openssl-dev build-essential cmake libfcgi-dev
 
 ## Demo
 
