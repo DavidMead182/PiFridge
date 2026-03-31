@@ -9,14 +9,13 @@
 
     <h1>PiFridge</h1>
 
-    <!-- Door State -->
+    <!-- Door State & Vitals -->
     <section>
         <h2>Door</h2>
         <p>Status: <span id="door-state">--</span></p>
         <p>Light (lux): <span id="lux">--</span></p>
     </section>
 
-    <!-- Fridge Vitals -->
     <section>
         <h2>Vitals</h2>
         <p>Temperature: <span id="temperature">--</span> &deg;C</p>
@@ -24,22 +23,62 @@
         <p>Pressure: <span id="pressure">--</span> hPa</p>
     </section>
 
-    <!-- Connection Status -->
     <section>
         <h2>Connection</h2>
         <p>Status: <span id="connection-status">Connecting...</span></p>
         <p>Last updated: <span id="last-updated">--</span></p>
     </section>
 
+    <!-- Inventory -->
+    <section>
+        <h2>Fridge Contents</h2>
+
+        <!-- Add item form -->
+        <div>
+            <h3>Add Item</h3>
+            <label>
+                Name:
+                <input type="text" id="input-name" placeholder="e.g. Milk">
+            </label>
+            <label>
+                Barcode:
+                <input type="text" id="input-barcode" placeholder="e.g. 5000112637922">
+            </label>
+            <label>
+                Quantity:
+                <input type="number" id="input-quantity" value="1" min="1">
+            </label>
+            <button onclick="addItem()">Add</button>
+            <p id="add-status"></p>
+        </div>
+
+        <!-- Inventory table -->
+        <table id="inventory-table" border="1">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Barcode</th>
+                    <th>Quantity</th>
+                    <th>Date Added</th>
+                    <th>Remove</th>
+                </tr>
+            </thead>
+            <tbody id="inventory-body">
+                <tr><td colspan="5">Loading...</td></tr>
+            </tbody>
+        </table>
+    </section>
+
     <script>
         // ---------------------------------------------------------------------------
-        // Config — change POLL_URL if the nginx location block path changes
+        // Config
         // ---------------------------------------------------------------------------
-        const POLL_URL      = "/api/fridge";
-        const POLL_INTERVAL = 1000; // ms — matches BME680 + door callback cadence
+        const VITALS_URL    = "/api/fridge";
+        const INVENTORY_URL = "/api/inventory";
+        const POLL_INTERVAL = 1000; // ms
 
         // ---------------------------------------------------------------------------
-        // DOM refs
+        // DOM refs — vitals
         // ---------------------------------------------------------------------------
         const elDoorState   = document.getElementById("door-state");
         const elLux         = document.getElementById("lux");
@@ -50,10 +89,9 @@
         const elLastUpdated = document.getElementById("last-updated");
 
         // ---------------------------------------------------------------------------
-        // Render — maps the JSON written by saveStateToJson() in main.cpp
-        //   { temperature, humidity, pressure, lux, door_open }
+        // Vitals polling — GET /api/fridge every second
         // ---------------------------------------------------------------------------
-        function render(data) {
+        function renderVitals(data) {
             elTemperature.textContent = data.temperature.toFixed(2);
             elHumidity.textContent    = data.humidity.toFixed(2);
             elPressure.textContent    = data.pressure.toFixed(2);
@@ -63,34 +101,124 @@
             elConnStatus.textContent  = "OK";
         }
 
-        // ---------------------------------------------------------------------------
-        // Poll — client-initiated GET to FastCGI endpoint via nginx
-        // Follows the REST/statelessness principle from the course notes:
-        // each request is self-contained and does not alter server state.
-        // ---------------------------------------------------------------------------
-        function poll() {
-            fetch(POLL_URL)
-                .then(function(response) {
-                    if (!response.ok) {
-                        throw new Error("HTTP " + response.status);
-                    }
-                    return response.json();
+        function pollVitals() {
+            fetch(VITALS_URL)
+                .then(function(r) {
+                    if (!r.ok) throw new Error("HTTP " + r.status);
+                    return r.json();
                 })
-                .then(function(data) {
-                    render(data);
-                })
+                .then(renderVitals)
                 .catch(function(err) {
                     elConnStatus.textContent = "Error: " + err.message;
                 });
         }
 
         // ---------------------------------------------------------------------------
-        // Start polling on page load — mirrors the JS timer pattern from the notes:
-        // setInterval drives the refresh rate; the server is never pushed to.
+        // Inventory — GET /api/inventory
+        // Renders the table of items with a delete button per row
+        // ---------------------------------------------------------------------------
+        function renderInventory(items) {
+            var tbody = document.getElementById("inventory-body");
+            tbody.innerHTML = "";
+
+            if (items.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='5'>No items in fridge.</td></tr>";
+                return;
+            }
+
+            items.forEach(function(item) {
+                var row = document.createElement("tr");
+                row.innerHTML =
+                    "<td>" + item.name        + "</td>" +
+                    "<td>" + item.barcode     + "</td>" +
+                    "<td>" + item.quantity    + "</td>" +
+                    "<td>" + item.date_added  + "</td>" +
+                    "<td><button onclick='deleteItem(" + item.id + ")'>Delete</button></td>";
+                tbody.appendChild(row);
+            });
+        }
+
+        function fetchInventory() {
+            fetch(INVENTORY_URL)
+                .then(function(r) {
+                    if (!r.ok) throw new Error("HTTP " + r.status);
+                    return r.json();
+                })
+                .then(renderInventory)
+                .catch(function(err) {
+                    document.getElementById("inventory-body").innerHTML =
+                        "<tr><td colspan='5'>Error: " + err.message + "</td></tr>";
+                });
+        }
+
+        // ---------------------------------------------------------------------------
+        // Add item — POST /api/inventory
+        // Follows course notes section 6.4.4: client sends JSON to server via POST
+        // ---------------------------------------------------------------------------
+        function addItem() {
+            var name     = document.getElementById("input-name").value.trim();
+            var barcode  = document.getElementById("input-barcode").value.trim();
+            var quantity = parseInt(document.getElementById("input-quantity").value) || 1;
+            var status   = document.getElementById("add-status");
+
+            if (!name) {
+                status.textContent = "Name is required.";
+                return;
+            }
+
+            fetch(INVENTORY_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: name, barcode: barcode, quantity: quantity })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    status.textContent = "Added!";
+                    document.getElementById("input-name").value     = "";
+                    document.getElementById("input-barcode").value  = "";
+                    document.getElementById("input-quantity").value = 1;
+                    fetchInventory(); // refresh table
+                } else {
+                    status.textContent = "Error: " + (data.error || "unknown");
+                }
+            })
+            .catch(function(err) {
+                status.textContent = "Error: " + err.message;
+            });
+        }
+
+        // ---------------------------------------------------------------------------
+        // Delete item — POST /api/inventory/delete
+        // ---------------------------------------------------------------------------
+        function deleteItem(id) {
+            fetch(INVENTORY_URL + "/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: id })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    fetchInventory(); // refresh table
+                } else {
+                    alert("Delete failed: " + (data.error || "unknown"));
+                }
+            })
+            .catch(function(err) {
+                alert("Delete error: " + err.message);
+            });
+        }
+
+        // ---------------------------------------------------------------------------
+        // Start on page load
         // ---------------------------------------------------------------------------
         window.addEventListener("load", function() {
-            poll(); // immediate first fetch
-            setInterval(poll, POLL_INTERVAL);
+            pollVitals();
+            setInterval(pollVitals, POLL_INTERVAL);
+
+            fetchInventory();
+            setInterval(fetchInventory, 5000); // refresh inventory every 5 seconds
         });
     </script>
 
