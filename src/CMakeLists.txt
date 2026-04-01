@@ -2,7 +2,6 @@ add_subdirectory(common)
 add_subdirectory(BME680)
 add_subdirectory(BH1750)
 add_subdirectory(web_app)
- 
 add_subdirectory(BarcodeScanner)
 
 # -- PiFridge main executable --
@@ -19,8 +18,8 @@ target_include_directories(pifridge
 target_link_libraries(pifridge
     PRIVATE linux_i2c
     PRIVATE bme680
-    PRIVATE pifridge_rpi_hw      # BH1750, GpioOutput, DoorLightController
-    PRIVATE barcode_scanner      
+    PRIVATE bh1750
+    PRIVATE barcode_scanner
     PRIVATE Threads::Threads
 )
  

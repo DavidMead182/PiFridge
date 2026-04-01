@@ -3,11 +3,9 @@
 #include <stdexcept>
 #include <utility>
 
-DoorLightController::DoorLightController(IGpioOutput& gpio,
-                                         double openThresholdLux,
+DoorLightController::DoorLightController(double openThresholdLux,
                                          double closeThresholdLux)
-    : gpio_(gpio),
-      openThresholdLux_(openThresholdLux),
+    : openThresholdLux_(openThresholdLux),
       closeThresholdLux_(closeThresholdLux),
       isOpen_(false),
       lastLux_(-1.0) {
@@ -21,14 +19,12 @@ void DoorLightController::hasLightSample(double lux) {
 
     if (!isOpen_ && lux >= openThresholdLux_) {
         isOpen_ = true;
-        gpio_.setHigh();
         notifyDoorState(true, lux);
         return;
     }
 
     if (isOpen_ && lux <= closeThresholdLux_) {
         isOpen_ = false;
-        gpio_.setLow();
         notifyDoorState(false, lux);
     }
 }

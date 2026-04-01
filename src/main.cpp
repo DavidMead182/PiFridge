@@ -9,7 +9,6 @@
 #include "BME680Sensor.hpp"
 #include "BH1750/include/Bh1750Sensor.hpp"
 #include "BH1750/include/DoorLightController.hpp"
-#include "BH1750/include/GpioOutput.hpp"
 #include <fstream>
 #include <iomanip> 
 #include <atomic>
@@ -98,17 +97,8 @@ int main() {
     // BH1750 + DoorLightController - door detection
     // -----------------------------------------------------------------------
 
-    GpioOutput gpio(
-        /*chipName=*/   "gpiochip0",
-        /*lineOffset=*/ 17,
-        /*activeHigh=*/ true
-    );
-
-    DoorLightController doorController(
-        gpio,
-        /*openThresholdLux=*/  30.0,
-        /*closeThresholdLux=*/ 10.0
-    );
+    // REPLACE with just this
+    DoorLightController doorController(30.0, 10.0);
 
     // Callback: fires only when door state CHANGES (open->closed or closed->open)
     doorController.registerDoorStateCallback([&](bool isOpen, double lux) {
