@@ -3,25 +3,37 @@
 
 #include <string>
 #include <functional>
+#include <thread>
+#include <atomic>
 
 // Function to fetch product info from OpenFoodFacts API
 void fetch_product(const std::string& number);
 
 // Class to read data from a serial port
-class SerialReader {
+class BarcodeScanner {
 public:
     using Callback = std::function<void(const std::string&)>;
 
-    SerialReader(const std::string& portName, Callback cb);
-    ~SerialReader();
+    explicit BarcodeScanner(const std::string& portName);
+    ~BarcodeScanner();
 
-    bool openPort();
-    void run();
+    void registerCallback(Callback cb);
+
+    void start();   
+    void stop();
+    void triggerScan();
+    void stopScan();
 
 private:
-    std::string port;
-    Callback callback;
-    int fd;
+    bool openPort();
+    void run(); 
+
+    std::string       port;
+    Callback          callback;
+    int               fd;
+    int               wake_pipe_[2] = {-1, -1};
+    std::thread       thread_;
+    std::atomic<bool> running_{false};
 };
 
 #endif

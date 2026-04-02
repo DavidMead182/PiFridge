@@ -7,8 +7,9 @@
 //   sudo ./build/src/pifridge
 
 #include "BME680Sensor.hpp"
-#include "BH1750/include/Bh1750Sensor.hpp"
-#include "BH1750/include/DoorLightController.hpp"
+#include "Bh1750Sensor.hpp"
+#include "DoorLightController.hpp"
+#include "BarcodeScanner.hpp"
 #include <fstream>
 #include <iomanip> 
 #include <atomic>
@@ -93,11 +94,18 @@ int main() {
             << "Gas=" << sample.gas_ohms      << "ohm\n";
     });
 
+    BarcodeScanner scanner("/dev/ttyAMA0");
+
+    scanner.registerCallback([&](const std::string& barcode) {
+        std::cout << "[Barcode] Scanned: " << barcode << "\n";
+        fetch_product(barcode);
+    });
+    scanner.start();
+    
     // -----------------------------------------------------------------------
     // BH1750 + DoorLightController - door detection
     // -----------------------------------------------------------------------
 
-    // REPLACE with just this
     DoorLightController doorController(30.0, 10.0);
 
     // Callback: fires only when door state CHANGES (open->closed or closed->open)
@@ -111,8 +119,10 @@ int main() {
  
         if (isOpen) {
             std::cout << "[Door] Opened (lux=" << lux << ") - Barcode scanner ON\n";
+            scanner.triggerScan();
         } else {
             std::cout << "[Door] Closed (lux=" << lux << ") - Barcode scanner OFF\n";
+            scanner.stopScan();
         }
  
         // TODO: replace prints with real barcode scanner enable/disable
@@ -145,6 +155,7 @@ int main() {
     std::cout << "\nPiFridge shutting down...\n";
     lightSensor.stop();
     bme680.stop();
+    scanner.stop();
 
     // ----- TEMP EXPLANATION OF THE  MAIN PROGRAM
     // server.stop();

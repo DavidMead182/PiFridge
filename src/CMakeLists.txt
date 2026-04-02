@@ -11,7 +11,7 @@ target_include_directories(pifridge
     PRIVATE ${CMAKE_SOURCE_DIR}/include
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/common
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/BME680
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/BH1750
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/BH1750/include
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/BarcodeScanner
 )
  
@@ -21,5 +21,6 @@ target_link_libraries(pifridge
     PRIVATE bh1750
     PRIVATE barcode_scanner
     PRIVATE Threads::Threads
+    PRIVATE CURL::libcurl
 )
  
