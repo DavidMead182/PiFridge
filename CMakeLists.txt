@@ -5,8 +5,11 @@ project(PiFridge LANGUAGES CXX)
  
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
- 
+
+find_package(Threads REQUIRED)
+
+find_package(CURL REQUIRED)
+
 add_subdirectory(src)
- 
-# Compile options to check the code
+
 add_compile_options(-Wall -Wconversion -Wextra -pedantic)
