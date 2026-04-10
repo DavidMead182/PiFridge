@@ -10,6 +10,7 @@
 #include "Bh1750Sensor.hpp"
 #include "DoorLightController.hpp"
 #include "BarcodeScanner.hpp"
+#include "Camera.hpp"
 #include <fstream>
 #include <iomanip> 
 #include <atomic>
@@ -101,6 +102,24 @@ int main() {
         fetch_product(barcode);
     });
     scanner.start();
+
+    // Camera
+
+    Camera::Config cameraConfig;
+    cameraConfig.image_output_dir = "/tmp/pifridge_frames";
+    cameraConfig.json_output_path = "/tmp/fridge_camera.json";
+    cameraConfig.capture_command =
+        "libcamera-still -n --immediate --width 1280 --height 720 -o {image}";
+    cameraConfig.tesseract_command =
+        "tesseract {image} stdout --psm 6 2>/dev/null";
+
+    cameraConfig.model_path = "/home/pifridge/PiFridge/object_detect/detect.tflite";
+    cameraConfig.label_path = "/home/pifridge/PiFridge/object_detect/labelmap.txt";
+    cameraConfig.interval = std::chrono::milliseconds(2000);
+    cameraConfig.confidence_threshold = 0.5f;
+
+    Camera camera(cameraConfig);
+    camera.start();
     
     // -----------------------------------------------------------------------
     // BH1750 + DoorLightController - door detection
@@ -116,10 +135,13 @@ int main() {
             state.lux = lux;
             saveStateToJson(state); // Export to JSON whenever door state changes
         }
+
+        camera.setDoorOpen(isOpen);
  
         if (isOpen) {
             std::cout << "[Door] Opened (lux=" << lux << ") - Barcode scanner ON\n";
             scanner.triggerScan();
+            camera.triggerCaptureNow();
         } else {
             std::cout << "[Door] Closed (lux=" << lux << ") - Barcode scanner OFF\n";
             scanner.stopScan();
@@ -156,6 +178,7 @@ int main() {
     lightSensor.stop();
     bme680.stop();
     scanner.stop();
+    camera.stop();
 
     // ----- TEMP EXPLANATION OF THE  MAIN PROGRAM
     // server.stop();
