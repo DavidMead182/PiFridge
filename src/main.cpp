@@ -113,8 +113,14 @@ int main() {
     //--zsl for better image capture
     cameraConfig.capture_command =
         "rpicam-still --zsl -n --immediate --width 1280 --height 720 -o {image} >/dev/null 2>&1";
+    
+    // cameraConfig.tesseract_command =
+    //     "tesseract {image} stdout --psm 6 2>/dev/null";
+
+    //--psm 11 for sparse text, 6 for block of text, 7 for single line, 8 for single word. Can experiment for best results
+    //focus on common expiry date characters
     cameraConfig.tesseract_command =
-        "tesseract {image} stdout --psm 6 2>/dev/null";
+        "tesseract {image} stdout --psm 11 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/:.- 2>/dev/null";
     cameraConfig.model_path = "/home/pifridge/PiFridge/src/Camera/detect.tflite";
     cameraConfig.label_path = "/home/pifridge/PiFridge/src/Camera/labelmap.txt";
     cameraConfig.interval = std::chrono::milliseconds(2000);
