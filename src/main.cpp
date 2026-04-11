@@ -109,16 +109,26 @@ int main() {
     cameraConfig.image_output_dir = "/tmp/pifridge_frames";
     cameraConfig.json_output_path = "/tmp/fridge_camera.json";
     cameraConfig.capture_command =
-        "libcamera-still -n --immediate --width 1280 --height 720 -o {image}";
+        "rpicam-still -n --immediate --width 1280 --height 720 -o {image}";
     cameraConfig.tesseract_command =
         "tesseract {image} stdout --psm 6 2>/dev/null";
-
-    cameraConfig.model_path = "/home/pifridge/PiFridge/object_detect/detect.tflite";
-    cameraConfig.label_path = "/home/pifridge/PiFridge/object_detect/labelmap.txt";
+    cameraConfig.model_path = "/home/pifridge/PiFridge/src/Camera/detect.tflite";
+    cameraConfig.label_path = "/home/pifridge/PiFridge/src/Camera/labelmap.txt";
     cameraConfig.interval = std::chrono::milliseconds(2000);
     cameraConfig.confidence_threshold = 0.5f;
+    cameraConfig.num_threads = 2;
 
     Camera camera(cameraConfig);
+
+    camera.registerCallback([&](const CameraSnapshot& snapshot) {
+        std::cout << "[Camera] image=" << snapshot.image_path << "\n";
+        std::cout << "[Camera] text=" << snapshot.text << "\n";
+        for (const auto& obj : snapshot.objects) {
+            std::cout << "[Camera] object=" << obj.label
+                    << " confidence=" << obj.confidence << "\n";    
+        }
+    });
+
     camera.start();
     
     // -----------------------------------------------------------------------

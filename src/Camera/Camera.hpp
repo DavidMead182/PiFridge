@@ -38,12 +38,12 @@ public:
         std::string json_output_path = "/tmp/fridge_camera.json";
 
         std::string capture_command =
-            "libcamera-still -n --immediate --width 1280 --height 720 -o {image}";
+            "rpicam-still -n --immediate --width 1280 --height 720 -o {image}";
         std::string tesseract_command =
             "tesseract {image} stdout --psm 6 2>/dev/null";
 
-        std::string model_path = "/home/pifridge/PiFridge/object_detect/detect.tflite";
-        std::string label_path = "/home/pifridge/PiFridge/object_detect/labelmap.txt";
+        std::string model_path = "/home/pifridge/PiFridge/src/Camera/detect.tflite";
+        std::string label_path = "/home/pifridge/PiFridge/src/Camera/labelmap.txt";
 
         std::chrono::milliseconds interval{2000};
         float confidence_threshold = 0.50f;
