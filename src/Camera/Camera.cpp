@@ -11,6 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include <utility>
+#include <unordered_set>
 
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -18,6 +19,21 @@
 #include <tensorflow/lite/interpreter.h>
 #include <tensorflow/lite/kernels/register.h>
 #include <tensorflow/lite/model.h>
+
+namespace {
+const std::unordered_set<std::string> kFoodLabels = {
+    "banana",
+    "apple",
+    "sandwich",
+    "orange",
+    "broccoli",
+    "carrot",
+    "hot dog",
+    "pizza",
+    "donut",
+    "cake"
+};
+}
 
 namespace fs = std::filesystem;
 
@@ -294,11 +310,20 @@ std::vector<CameraDetection> Camera::runObjectDetection(const std::string& image
         if (score < config_.confidence_threshold) continue;
 
         const int classIndex = static_cast<int>(classes[i]);
+        const int labelIndex = classIndex + 1;
         CameraDetection det;
-        if (classIndex >= 0 && classIndex < static_cast<int>(labels_.size())) {
-            det.label = labels_[classIndex];
+        if (labelIndex >= 0 && labelIndex < static_cast<int>(labels_.size())) {
+            det.label = labels_[labelIndex];
         } else {
             det.label = "unknown";
+        }
+
+        if (det.label == "???" || det.label == "unknown") {
+            continue;
+        }
+
+        if (kFoodLabels.find(det.label) == kFoodLabels.end()) {
+            continue;
         }
 
         det.confidence = score;
@@ -327,7 +352,7 @@ std::vector<std::string> Camera::loadLabels(const std::string& labelPath) const 
     std::string line;
     while (std::getline(in, line)) {
         line = trim(line);
-        if (line.empty() || line == "???") continue;
+        if (line.empty()) continue;
         labels.push_back(line);
     }
 
