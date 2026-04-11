@@ -1,3 +1,5 @@
+find_library(SQLITE_LIB sqlite3 REQUIRED)
+
 # Sources
 set(BARCODESCANNER_SOURCES
     BarcodeScanner.cpp
