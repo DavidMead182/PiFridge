@@ -108,14 +108,17 @@ int main() {
     Camera::Config cameraConfig;
     cameraConfig.image_output_dir = "/tmp/pifridge_frames";
     cameraConfig.json_output_path = "/tmp/fridge_camera.json";
+    // cameraConfig.capture_command =
+    //     "rpicam-still -n --immediate --width 1280 --height 720 -o {image}";
+    //--zsl for better image capture
     cameraConfig.capture_command =
-        "rpicam-still -n --immediate --width 1280 --height 720 -o {image}";
+        "rpicam-still --zsl -n --immediate --width 1280 --height 720 -o {image}";
     cameraConfig.tesseract_command =
         "tesseract {image} stdout --psm 6 2>/dev/null";
     cameraConfig.model_path = "/home/pifridge/PiFridge/src/Camera/detect.tflite";
     cameraConfig.label_path = "/home/pifridge/PiFridge/src/Camera/labelmap.txt";
     cameraConfig.interval = std::chrono::milliseconds(2000);
-    cameraConfig.confidence_threshold = 0.5f;
+    cameraConfig.confidence_threshold = 0.7f;
     cameraConfig.num_threads = 2;
 
     Camera camera(cameraConfig);
