@@ -77,6 +77,8 @@ private:
     std::string replaceToken(std::string src, const std::string& token, const std::string& value) const;
     std::string execCommand(const std::string& command) const;
     std::string runTextDetection(const std::string& imagePath) const;
+    std::string buildOcrImagePath(const std::string& imagePath) const;
+    std::string extractBestBeforeText(const std::string& rawText) const;
     std::vector<CameraDetection> runObjectDetection(const std::string& imagePath);
     std::vector<std::string> loadLabels(const std::string& labelPath) const;
     void writeSnapshotJson(const CameraSnapshot& snapshot) const;

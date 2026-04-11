@@ -12,6 +12,8 @@
 #include <sstream>
 #include <utility>
 #include <unordered_set>
+#include <cctype>
+#include <regex>
 
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -223,7 +225,74 @@ std::string Camera::execCommand(const std::string& command) const {
 
 std::string Camera::runTextDetection(const std::string& imagePath) const {
     const std::string command = replaceToken(config_.tesseract_command, "{image}", imagePath);
-    return trim(execCommand(command));
+    const std::string rawText = trim(execCommand(command));
+    return extractBestBeforeText(rawText);
+}
+
+std::string Camera::buildOcrImagePath(const std::string& imagePath) const {
+    return imagePath + ".ocr.jpg";
+}
+
+std::string Camera::extractBestBeforeText(const std::string& rawText) const {
+    if (rawText.empty()) {
+        return "";
+    }
+
+    std::vector<std::string> matches;
+
+    const std::vector<std::regex> patterns = {
+        std::regex(R"(\b\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}\b)"),
+        std::regex(R"(\b\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2}\b)"),
+        std::regex(R"(\b\d{1,2}\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\s+\d{2,4}\b)", std::regex::icase),
+        std::regex(R"(\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\s+\d{1,2}\s+\d{2,4}\b)", std::regex::icase),
+        std::regex(R"(\b(BEST BEFORE|USE BY|BBE|BB)\s*[:\-]?\s*[A-Z0-9\/\-. ]+\b)", std::regex::icase)
+    };
+
+    for (const auto& pattern : patterns) {
+        for (std::sregex_iterator it(rawText.begin(), rawText.end(), pattern), end; it != end; ++it) {
+            const std::string value = trim(it->str());
+            if (!value.empty()) {
+                matches.push_back(value);
+            }
+        }
+    }
+
+    if (!matches.empty()) {
+        std::ostringstream oss;
+        for (size_t i = 0; i < matches.size(); ++i) {
+            if (i > 0) oss << " | ";
+            oss << matches[i];
+        }
+        return oss.str();
+    }
+
+    std::istringstream iss(rawText);
+    std::string line;
+    std::vector<std::string> filtered;
+
+    while (std::getline(iss, line)) {
+        line = trim(line);
+        if (line.size() < 4) continue;
+
+        int usefulChars = 0;
+        for (char c : line) {
+            if (std::isalnum(static_cast<unsigned char>(c)) || c == '/' || c == '-' || c == '.') {
+                ++usefulChars;
+            }
+        }
+
+        if (usefulChars >= 4) {
+            filtered.push_back(line);
+        }
+    }
+
+    std::ostringstream oss;
+    for (size_t i = 0; i < filtered.size(); ++i) {
+        if (i > 0) oss << " | ";
+        oss << filtered[i];
+    }
+
+    return oss.str();
 }
 
 std::vector<CameraDetection> Camera::runObjectDetection(const std::string& imagePath) {
