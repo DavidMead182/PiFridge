@@ -1,87 +1,118 @@
-# Raspberry Pi sensors
+# BH1750 light sensor module
 
-C++ code for Raspberry Pi sensor reads and simple control logic.
-Core logic is unit tested without hardware.
+## Purpose
 
-## Light sensor feature
+This module reads BH1750 lux data on the Raspberry Pi and publishes light samples through callbacks. Door open or closed state is derived from lux thresholds with hysteresis inside `DoorLightController`.
 
-BH1750 light sensor over I2C
-Door open close detection using lux thresholds with hysteresis
-GPIO output to control the fridge light
+This is the event-driven refactor requested in course feedback:
+- no public getter-based polling API
+- sensor samples are pushed through callbacks
+- sensor work runs in its own thread
+- wakeup uses blocking I/O primitives
+- unit test is integrated through CMake
 
-## Wiring BH1750
+## Files
 
-VCC to 3.3V
-GND to GND
-SDA to GPIO2 SDA1 pin 3
-SCL to GPIO3 SCL1 pin 5
+- `include/ILightSensor.hpp`
+- `include/Bh1750Sensor.hpp`
+- `include/DoorLightController.hpp`
+- `ILightSensor.cpp`
+- `Bh1750Sensor.cpp`
+- `DoorLightController.cpp`
+- `test/DoorLightControllerTest.cpp`
 
-Default BH1750 I2C address is 0x23.
-Some boards support 0x5c when address is set high.
+## Design
 
-## Run tests anywhere
+### `ILightSensor`
+Defines the callback-based interface:
+- `registerCallback(...)`
+- `start(int intervalMs)`
+- `stop()`
+
+### `Bh1750Sensor`
+- owns the BH1750 I2C file descriptor
+- runs a worker thread
+- uses `timerfd`, `eventfd`, and `poll()` for blocking wakeup
+- emits lux values through `ILightSensor::LightLevelCallback`
+
+### `DoorLightController`
+- receives lux samples through `hasLightSample(double lux)`
+- applies open and close thresholds with hysteresis
+- emits door state changes through `DoorStateCallback`
+
+## Build and test
 
 ```bash
-cmake -S rpi_sensors -B rpi_sensors/build -G Ninja
-cmake --build rpi_sensors/build
-ctest --test-dir rpi_sensors/build --output-on-failure
+cmake -S src/BH1750 -B src/BH1750/build
+cmake --build src/BH1750/build
+ctest --test-dir src/BH1750/build --output-on-failure
 ```
 
-## Run on Raspberry Pi
+## Packages
 
-Enable I2C in raspi config.
-
-Install dependencies:
+On Debian or Raspberry Pi OS:
 
 ```bash
-sudo apt-get update -y
-sudo apt-get install -y libgpiod-dev i2c-tools cmake ninja-build pkg-config
+sudo apt-get update
+sudo apt-get install -y build-essential cmake pkg-config libi2c-dev i2c-tools
 ```
 
-Confirm sensor is detected:
+## Hardware assumptions
+
+- I2C device path: `/dev/i2c-1`
+- default BH1750 address: `0x23`
+- BH1750 is used in continuous high-resolution mode
+
+Typical wiring:
+- VCC to 3.3V
+- GND to GND
+- SDA to GPIO2 / SDA1
+- SCL to GPIO3 / SCL1
+
+Confirm the sensor is visible:
 
 ```bash
 sudo i2cdetect -y 1
 ```
 
-Build hardware demo:
+## Runtime behavior
 
-```bash
-cmake -S rpi_sensors -B rpi_sensors/build -G Ninja -DPIFRIDGE_BUILD_HARDWARE=ON
-cmake --build rpi_sensors/build
+The sensor thread blocks in `poll()` and wakes when:
+- the periodic `timerfd` expires
+- the `eventfd` stop signal is written
+
+Each wake reads lux once and forwards the value through the registered callback.
+
+## Validation
+
+Validated locally with:
+- CMake configure
+- CMake build
+- CTest unit test
+
+Validated on Raspberry Pi during standalone refactor verification:
+- BH1750 detected on I2C bus 1 at `0x23`
+- callback flow produced correct open and closed transitions from live lux data
+
+Observed Pi output included:
+
+```text
+door=open lux=425
+door=closed lux=0.833333
+door=open lux=69.1667
+door=closed lux=0.833333
 ```
 
-Run demo:
+## Integration note
 
-```bash
-sudo ./rpi_sensors/build/pifridge_light_sensor_demo
-```
+This directory now provides the BH1750 light sensor as a reusable library module for the integrated application. The test target remains here so the callback and controller logic can still be verified independently from wider team integration.
 
-Options:
+## Owner and responsibility
 
-open threshold lux default 30
-close threshold lux default 10
-interval ms default 200
-gpio line default 17
-
-Example:
-
-```bash
-sudo ./rpi_sensors/build/pifridge_light_sensor_demo --open 40 --close 15 --gpio-line 17
-```
-
-If your light wiring is active low:
-
-```bash
-sudo ./rpi_sensors/build/pifridge_light_sensor_demo --active-low
-```
-
-## Calibration
-
-Measure lux with door open and door closed.
-Set open threshold higher than closed lux.
-Set close threshold lower than open threshold to avoid flicker.
-
-## Tracking
-
-This work addresses GitHub issue 6.
+This BH1750 module refactor and validation work was carried out by Hamna Khalid.
+This includes:
+- callback-based light sensor interface
+- event-driven sampling thread
+- CMake test restoration
+- Raspberry Pi validation
+- BH1750 module documentation update
