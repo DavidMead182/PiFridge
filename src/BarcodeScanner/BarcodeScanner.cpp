@@ -127,6 +127,7 @@ bool BarcodeScanner::openPort() {
 }
 void BarcodeScanner::triggerScan() {
     if (fd < 0) return;
+    tcflush(fd, TCIOFLUSH);
     const uint8_t cmd[] = { 0x7E, 0x00, 0x08, 0x01, 0x00, 0x02, 0x01, 0xAB, 0xCD };
     write(fd, cmd, sizeof(cmd));
     tcdrain(fd);  // wait for bytes to be physically transmitted
