@@ -112,7 +112,7 @@ int main() {
     //     "rpicam-still -n --immediate --width 1280 --height 720 -o {image}";
     //--zsl for better image capture
     cameraConfig.capture_command =
-        "rpicam-still --zsl -n --immediate --width 1280 --height 720 -o {image}";
+        "rpicam-still --zsl -n --immediate --width 1280 --height 720 -o {image} >/dev/null 2>&1";
     cameraConfig.tesseract_command =
         "tesseract {image} stdout --psm 6 2>/dev/null";
     cameraConfig.model_path = "/home/pifridge/PiFridge/src/Camera/detect.tflite";
@@ -125,10 +125,14 @@ int main() {
 
     camera.registerCallback([&](const CameraSnapshot& snapshot) {
         std::cout << "[Camera] image=" << snapshot.image_path << "\n";
-        std::cout << "[Camera] text=" << snapshot.text << "\n";
+
+        if (!snapshot.text.empty()) {
+            std::cout << "[Camera] text=" << snapshot.text << "\n";
+        }
+
         for (const auto& obj : snapshot.objects) {
             std::cout << "[Camera] object=" << obj.label
-                    << " confidence=" << obj.confidence << "\n";    
+                    << " confidence=" << obj.confidence << "\n";
         }
     });
 
