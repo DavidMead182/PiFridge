@@ -3,6 +3,7 @@ add_subdirectory(BME680)
 add_subdirectory(BH1750)
 add_subdirectory(web_app)
 add_subdirectory(BarcodeScanner)
+add_subdirectory(Camera)
 
 # -- PiFridge main executable --
 add_executable(pifridge main.cpp)
@@ -13,6 +14,7 @@ target_include_directories(pifridge
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/BME680
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/BH1750/include
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/BarcodeScanner
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Camera
 )
  
 target_link_libraries(pifridge
@@ -20,6 +22,7 @@ target_link_libraries(pifridge
     PRIVATE bme680
     PRIVATE bh1750
     PRIVATE barcode_scanner
+    PRIVATE camera
     PRIVATE Threads::Threads
     PRIVATE CURL::libcurl
 )

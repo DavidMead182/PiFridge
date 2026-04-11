@@ -10,6 +10,7 @@
 #include "Bh1750Sensor.hpp"
 #include "DoorLightController.hpp"
 #include "BarcodeScanner.hpp"
+#include "Camera.hpp"
 #include <fstream>
 #include <iomanip> 
 #include <atomic>
@@ -101,6 +102,47 @@ int main() {
         fetch_product(barcode);
     });
     scanner.start();
+
+    // Camera
+
+    Camera::Config cameraConfig;
+    cameraConfig.image_output_dir = "/tmp/pifridge_frames";
+    cameraConfig.json_output_path = "/tmp/fridge_camera.json";
+    // cameraConfig.capture_command =
+    //     "rpicam-still -n --immediate --width 1280 --height 720 -o {image}";
+    //--zsl for better image capture
+    cameraConfig.capture_command =
+        "rpicam-still --zsl -n --immediate --width 1280 --height 720 -o {image} >/dev/null 2>&1";
+    
+    // cameraConfig.tesseract_command =
+    //     "tesseract {image} stdout --psm 6 2>/dev/null";
+
+    //--psm 11 for sparse text, 6 for block of text, 7 for single line, 8 for single word. Can experiment for best results
+    //focus on common expiry date characters
+    cameraConfig.tesseract_command =
+        "tesseract {image} stdout --psm 11 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/:.- 2>/dev/null";
+    cameraConfig.model_path = "/home/pifridge/PiFridge/src/Camera/detect.tflite";
+    cameraConfig.label_path = "/home/pifridge/PiFridge/src/Camera/labelmap.txt";
+    cameraConfig.interval = std::chrono::milliseconds(2000);
+    cameraConfig.confidence_threshold = 0.7f;
+    cameraConfig.num_threads = 2;
+
+    Camera camera(cameraConfig);
+
+    camera.registerCallback([&](const CameraSnapshot& snapshot) {
+        std::cout << "[Camera] image=" << snapshot.image_path << "\n";
+
+        if (!snapshot.text.empty()) {
+            std::cout << "[Camera] text=" << snapshot.text << "\n";
+        }
+
+        for (const auto& obj : snapshot.objects) {
+            std::cout << "[Camera] object=" << obj.label
+                    << " confidence=" << obj.confidence << "\n";
+        }
+    });
+
+    camera.start();
     
     // -----------------------------------------------------------------------
     // BH1750 + DoorLightController - door detection
@@ -116,10 +158,13 @@ int main() {
             state.lux = lux;
             saveStateToJson(state); // Export to JSON whenever door state changes
         }
+
+        camera.setDoorOpen(isOpen);
  
         if (isOpen) {
             std::cout << "[Door] Opened (lux=" << lux << ") - Barcode scanner ON\n";
             scanner.triggerScan();
+            camera.triggerCaptureNow();
         } else {
             std::cout << "[Door] Closed (lux=" << lux << ") - Barcode scanner OFF\n";
             scanner.stopScan();
@@ -156,6 +201,7 @@ int main() {
     lightSensor.stop();
     bme680.stop();
     scanner.stop();
+    camera.stop();
 
     // ----- TEMP EXPLANATION OF THE  MAIN PROGRAM
     // server.stop();
