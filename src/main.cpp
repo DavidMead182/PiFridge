@@ -109,7 +109,7 @@ int main() {
         }
         code = code.substr(5);
 
-        // Take the last 13 digits — real EAN-13 is always at the end
+        // Take the last 13 digits
         if (code.size() > 13) {
             code = code.substr(code.size() - 13);
         }
@@ -122,6 +122,14 @@ int main() {
 
         std::cout << "[Barcode] Scanned: " << code << "\n";
         fetch_product(code);
+
+        // Re-arm the scanner if the door is still open
+        {
+            std::lock_guard<std::mutex> lock(state.mutex);
+            if (state.door_open) {
+                scanner.triggerScan();
+            }
+        }
     });
 
     scanner.start();
