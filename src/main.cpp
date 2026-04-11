@@ -169,8 +169,6 @@ int main() {
             std::cout << "[Door] Closed (lux=" << lux << ") - Barcode scanner OFF\n";
             scanner.stopScan();
         }
- 
-        // TODO: replace prints with real barcode scanner enable/disable
     });
 
     Bh1750Sensor lightSensor(
