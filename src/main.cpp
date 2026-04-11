@@ -19,6 +19,8 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
+#include <vector>
+#include <algorithm>
 
 struct FridgeState {
     BME680Sample    vitals{};
@@ -98,9 +100,38 @@ int main() {
     BarcodeScanner scanner("/dev/ttyAMA0");
 
     scanner.registerCallback([&](const std::string& barcode) {
-        std::cout << "[Barcode] Scanned: " << barcode << "\n";
-        fetch_product(barcode);
+        std::string code = barcode;
+
+        // Strip 5-byte hardware header
+        if (code.size() <= 5) {
+            std::cerr << "[Barcode] Too short\n";
+            return;
+        }
+        code = code.substr(5);
+
+        // Take the last 13 digits
+        if (code.size() > 13) {
+            code = code.substr(code.size() - 13);
+        }
+
+        // Validate it's all digits
+        if (code.find_first_not_of("0123456789") != std::string::npos) {
+            std::cerr << "[Barcode] Non-digit characters found: " << code << "\n";
+            return;
+        }
+
+        std::cout << "[Barcode] Scanned: " << code << "\n";
+        fetch_product(code);
+
+        // Re-arm the scanner if the door is still open
+        {
+            std::lock_guard<std::mutex> lock(state.mutex);
+            if (state.door_open) {
+                scanner.triggerScan();
+            }
+        }
     });
+
     scanner.start();
 
     // Camera
@@ -169,8 +200,6 @@ int main() {
             std::cout << "[Door] Closed (lux=" << lux << ") - Barcode scanner OFF\n";
             scanner.stopScan();
         }
- 
-        // TODO: replace prints with real barcode scanner enable/disable
     });
 
     Bh1750Sensor lightSensor(

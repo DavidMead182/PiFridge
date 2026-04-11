@@ -488,7 +488,15 @@
         // ---------------------------------------------------------------------------
         // Inventory
         // ---------------------------------------------------------------------------
+        // Add this at the top of the script alongside other globals
+        var lastInventoryJSON = "";
+
         function renderInventory(items) {
+            // Only re-render if data has actually changed — prevents flickering
+            var newJSON = JSON.stringify(items);
+            if (newJSON === lastInventoryJSON) return;
+            lastInventoryJSON = newJSON;
+
             var list = document.getElementById("inventory-list");
             list.innerHTML = "";
 
@@ -574,11 +582,13 @@
         // ---------------------------------------------------------------------------
         // Start
         // ---------------------------------------------------------------------------
-        window.addEventListener("load", function() {
-            pollVitals();
-            setInterval(pollVitals, POLL_INTERVAL);
-            fetchInventory(); // fetch once on load, then only on add/delete
-        });
+    window.addEventListener("load", function() {
+        pollVitals();
+        setInterval(pollVitals, POLL_INTERVAL);
+
+        fetchInventory();
+        setInterval(fetchInventory, 2000); // poll every 2s, only re-renders if data changed
+    });
     </script>
 
 </body>
