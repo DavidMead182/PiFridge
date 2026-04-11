@@ -200,6 +200,7 @@ int main() {
     std::cout << "\nPiFridge shutting down...\n";
     lightSensor.stop();
     bme680.stop();
+    scanner.stop();
     camera.stop();
 
     // ----- TEMP EXPLANATION OF THE  MAIN PROGRAM
