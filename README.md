@@ -36,7 +36,7 @@ TODO: <-- insert Pictures of it --> and 3d model
 
 | Component                        | Quantity | Cost (£) | Link |
 |----------------------------------|----------|----------|------|
-| Wires & breadboard    | —        | 1    | 9.99 | [LINK](https://www.amazon.co.uk/Breadboard-tie-Points-Flexible-U-Shape-JumperWires/dp/B0BMFXPSVG/ref=sxin_15_pa_sp_search_thematic_sspa?c=ts&content-id=amzn1.sym.39f3f322-e4f4-475f-ab3a-16807016655d%3Aamzn1.sym.39f3f322-e4f4-475f-ab3a-16807016655d&cv_ct_cx=Breadboards&keywords=Breadboards&pd_rd_i=B0BMFXPSVG&pd_rd_r=9d42dc0d-cbb2-49be-a3d2-94858a94e145&pd_rd_w=WXJJp&pd_rd_wg=RcQmz&pf_rd_p=39f3f322-e4f4-475f-ab3a-16807016655d&pf_rd_r=TMYDXR77S4XN4G5YAV79&qid=1776025404&s=industrial&sbo=RZvfv%2F%2FHxDF%2BO5021pAnSA%3D%3D&sr=1-3-ad3222ed-9545-4dc8-8dd8-6b2cb5278509-spons&ts_id=10256475031&aref=Iuoce5IY8t&sp_csd=d2lkZ2V0TmFtZT1zcF9zZWFyY2hfdGhlbWF0aWM&th=1) |
+| Wires & breadboard    |  1    | 9.99 | [LINK](https://www.amazon.co.uk/Breadboard-tie-Points-Flexible-U-Shape-JumperWires/dp/B0BMFXPSVG/ref=sxin_15_pa_sp_search_thematic_sspa?c=ts&content-id=amzn1.sym.39f3f322-e4f4-475f-ab3a-16807016655d%3Aamzn1.sym.39f3f322-e4f4-475f-ab3a-16807016655d&cv_ct_cx=Breadboards&keywords=Breadboards&pd_rd_i=B0BMFXPSVG&pd_rd_r=9d42dc0d-cbb2-49be-a3d2-94858a94e145&pd_rd_w=WXJJp&pd_rd_wg=RcQmz&pf_rd_p=39f3f322-e4f4-475f-ab3a-16807016655d&pf_rd_r=TMYDXR77S4XN4G5YAV79&qid=1776025404&s=industrial&sbo=RZvfv%2F%2FHxDF%2BO5021pAnSA%3D%3D&sr=1-3-ad3222ed-9545-4dc8-8dd8-6b2cb5278509-spons&ts_id=10256475031&aref=Iuoce5IY8t&sp_csd=d2lkZ2V0TmFtZT1zcF9zZWFyY2hfdGhlbWF0aWM&th=1) |
 
 ## Circuit Setup
 ### Diagram
