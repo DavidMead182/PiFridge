@@ -71,10 +71,13 @@ Note: Tests covering direct GPIO writes and hardware-dependent classes are run s
 
 ## Documentation - update as we go
 
-- [BH1750 Light Sensor](docs/BH1750.md)
-- [BME680 Temp, Humidity and Pressure Sensor](docs/BME680.md)
-- [XXXX Barcode Sensor](docs/Barcode.md)
-- [XXXX Raspberry Pi Camera](docs/Barcode.md)
+- [BH1750 Light Sensor](src/BH1750/README.md)
+- [BME680 Temp, Humidity and Pressure Sensor](src/BME680/README.md)
+- [Barcode Sensor](src/BarcodeScanner/README.md)
+- [Raspberry Pi Camera](src/Camera/README.md)
+- [NGINX Config](config/README.md)
+- [Web App](src/web_app/README.md)
+- [Common Includes](src/common/README.md)
 - [Main Program](src/README.md)
 
 
