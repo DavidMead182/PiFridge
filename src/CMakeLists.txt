@@ -4,6 +4,7 @@ add_subdirectory(BH1750)
 add_subdirectory(web_app)
 add_subdirectory(BarcodeScanner)
 add_subdirectory(Camera)
+find_library(SQLITE_LIB sqlite3 REQUIRED)
 
 # -- PiFridge main executable --
 add_executable(pifridge main.cpp)
@@ -25,5 +26,6 @@ target_link_libraries(pifridge
     PRIVATE camera
     PRIVATE Threads::Threads
     PRIVATE CURL::libcurl
+    PRIVATE ${SQLITE_LIB}
 )
  
