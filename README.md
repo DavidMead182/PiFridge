@@ -11,9 +11,17 @@ Built as a real-time embedded systems project at the University of Glasgow.
 
 TODO: <-- insert Pictures of it --> and 3d model
 
-## TODO: Table of Contents
+## Table of Contents
+- [Bill of Materials](#bill-of-materials)
+- [Circuit Setup](#circuit-setup)
+- [Installation](#installation--clone-to-running-program)
+- [Documentation](#documentation---update-as-we-go)
+- [Social Media](#social-media)
+- [Acknowledgements](#acknowledgements)
+- [Authors & Contributions](#authors--contributions)
+- [License](#license)
 
-## Bill of Matierials
+## Bill of Materials
 
 **Total Amount: £119.36**
 
