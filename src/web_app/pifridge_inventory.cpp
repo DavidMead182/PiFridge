@@ -158,6 +158,17 @@ bool decrementItem(sqlite3* db, int id) {
     }
 }
 
+// Increments quantity by 1
+bool incrementItem(sqlite3* db, int id) {
+    const char* updateQuery = "UPDATE inventory SET quantity = quantity + 1 WHERE id = ?;";
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, updateQuery, -1, &stmt, nullptr) != SQLITE_OK) return false;
+    sqlite3_bind_int(stmt, 1, id);
+    bool ok = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    return ok;
+}
+
 // ---------------------------------------------------------------------------
 // Simple JSON field extractor
 // Pulls the value of a JSON string field: "key": "value"
@@ -256,6 +267,18 @@ int main() {
             if (!idStr.empty() && db) {
                 bool ok = decrementItem(db, std::stoi(idStr));
                 responseBody = ok ? "{\"success\": true}" : "{\"error\": \"decrement failed\"}";
+            } else {
+                responseBody = "{\"error\": \"missing id\"}";
+            }
+        }
+        // POST /api/inventory/increment — increase quantity by 1
+        else if (methodStr == "POST" && uriStr.find("/increment") != std::string::npos) {
+            std::string body  = readPostBody(request);
+            std::string idStr = extractJsonString(body, "id");
+        
+            if (!idStr.empty() && db) {
+                bool ok = incrementItem(db, std::stoi(idStr));
+                responseBody = ok ? "{\"success\": true}" : "{\"error\": \"increment failed\"}";
             } else {
                 responseBody = "{\"error\": \"missing id\"}";
             }

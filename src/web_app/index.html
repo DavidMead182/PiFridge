@@ -36,9 +36,6 @@
             background: linear-gradient(160deg, #ddeeff 0%, #eef3f7 40%, #f0f4f8 100%);
         }
 
-        /* ---------------------------------------------------------------------------
-           Header
-        --------------------------------------------------------------------------- */
         header {
             text-align: center;
             margin-bottom: 28px;
@@ -61,9 +58,6 @@
             letter-spacing: 0.05em;
         }
 
-        /* ---------------------------------------------------------------------------
-           Layout
-        --------------------------------------------------------------------------- */
         .container {
             max-width: 560px;
             margin: 0 auto;
@@ -72,9 +66,6 @@
             gap: 12px;
         }
 
-        /* ---------------------------------------------------------------------------
-           Card
-        --------------------------------------------------------------------------- */
         .card {
             background: var(--panel);
             border: 1px solid var(--border);
@@ -99,9 +90,7 @@
             margin-bottom: 12px;
         }
 
-        /* ---------------------------------------------------------------------------
-           Door status card
-        --------------------------------------------------------------------------- */
+        /* Door */
         .door-card {
             display: flex;
             align-items: center;
@@ -140,9 +129,7 @@
             margin-top: 5px;
         }
 
-        /* ---------------------------------------------------------------------------
-           Vitals grid
-        --------------------------------------------------------------------------- */
+        /* Vitals */
         .vitals-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -179,9 +166,7 @@
             letter-spacing: 0.04em;
         }
 
-        /* ---------------------------------------------------------------------------
-           Inventory — add form
-        --------------------------------------------------------------------------- */
+        /* Add form */
         .add-form {
             display: flex;
             flex-direction: column;
@@ -211,9 +196,10 @@
             transition: border-color 0.2s;
         }
 
-        .add-form input:focus {
-            border-color: var(--accent);
-        }
+        .add-form input:focus { border-color: var(--accent); }
+
+        /* Red border when required field is empty and user tried to submit */
+        .add-form input.invalid { border-color: var(--open); }
 
         .add-form input[type="number"] {
             width: 60px;
@@ -245,9 +231,9 @@
             font-family: var(--mono);
         }
 
-        /* ---------------------------------------------------------------------------
-           Inventory list — shelf style
-        --------------------------------------------------------------------------- */
+        .add-status.error { color: var(--open); }
+
+        /* Inventory list */
         .inventory-list {
             display: flex;
             flex-direction: column;
@@ -278,7 +264,7 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
-            min-width: 0; /* allows text truncation */
+            min-width: 0;
         }
 
         .item-name {
@@ -302,7 +288,7 @@
         .item-right {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             flex-shrink: 0;
         }
 
@@ -314,32 +300,34 @@
             border: 1px solid var(--cold);
             border-radius: 6px;
             padding: 2px 7px;
-            white-space: nowrap;
+            min-width: 32px;
+            text-align: center;
         }
 
-        /* Decrement button — styled as a subtle minus */
-        .btn-decrement {
+        /* +/- buttons */
+        .btn-qty {
             font-family: var(--mono);
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 500;
             color: var(--muted);
             background: none;
             border: 1px solid var(--border);
             border-radius: 6px;
-            padding: 2px 9px;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
             transition: color 0.2s, border-color 0.2s;
-            line-height: 1.4;
+            flex-shrink: 0;
+            line-height: 1;
         }
 
-        .btn-decrement:hover {
-            color: var(--open);
-            border-color: var(--open);
-        }
+        .btn-qty.minus:hover { color: var(--open);   border-color: var(--open); }
+        .btn-qty.plus:hover  { color: var(--closed); border-color: var(--closed); }
 
-        /* ---------------------------------------------------------------------------
-           Footer / connection status
-        --------------------------------------------------------------------------- */
+        /* Footer */
         .footer-card {
             display: flex;
             justify-content: space-between;
@@ -361,21 +349,12 @@
 
         .conn-dot.error { background: var(--open); }
 
-        .conn-text {
+        .conn-text, .last-updated {
             font-family: var(--mono);
             font-size: 0.7rem;
             color: var(--muted);
         }
 
-        .last-updated {
-            font-family: var(--mono);
-            font-size: 0.7rem;
-            color: var(--muted);
-        }
-
-        /* ---------------------------------------------------------------------------
-           Animations
-        --------------------------------------------------------------------------- */
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -386,19 +365,12 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* ---------------------------------------------------------------------------
-           Mobile — tighten up on very small screens
-        --------------------------------------------------------------------------- */
         @media (max-width: 400px) {
-            body { padding: 16px 10px 32px; }
-
+            body  { padding: 16px 10px 32px; }
             .card { padding: 14px 14px; }
-
-            .add-form input { font-size: 0.8rem; padding: 7px 8px; }
-
-            .vital-value { font-size: 1rem; }
-
-            .item-name { font-size: 0.82rem; }
+            .add-form input  { font-size: 0.8rem; padding: 7px 8px; }
+            .vital-value     { font-size: 1rem; }
+            .item-name       { font-size: 0.82rem; }
         }
     </style>
 </head>
@@ -451,7 +423,8 @@
 
             <div class="add-form">
                 <div class="add-form-row">
-                    <input type="text"   id="input-name"     placeholder="Item name">
+                    <!-- required field — highlighted red if empty on submit -->
+                    <input type="text"   id="input-name"     placeholder="Item name *">
                     <input type="text"   id="input-barcode"  placeholder="Barcode">
                     <input type="number" id="input-quantity" value="1" min="1">
                     <button class="btn-add" onclick="addItem()">Add</button>
@@ -476,15 +449,12 @@
     </div>
 
     <script>
-        // ---------------------------------------------------------------------------
-        // Config
-        // ---------------------------------------------------------------------------
         const VITALS_URL    = "/api/fridge";
         const INVENTORY_URL = "/api/inventory";
         const POLL_INTERVAL = 1000;
 
         // ---------------------------------------------------------------------------
-        // Vitals polling
+        // Vitals
         // ---------------------------------------------------------------------------
         function renderVitals(data) {
             document.getElementById("temperature").textContent = data.temperature.toFixed(1);
@@ -519,7 +489,7 @@
         }
 
         // ---------------------------------------------------------------------------
-        // Inventory — only re-renders when data changes to prevent flickering
+        // Inventory
         // ---------------------------------------------------------------------------
         var lastInventoryJSON = "";
 
@@ -548,9 +518,9 @@
                         "</div>" +
                     "</div>" +
                     "<div class='item-right'>" +
+                        "<button class='btn-qty minus' onclick='decrementItem(" + item.id + ")'>&#8722;</button>" +
                         "<span class='item-qty'>x" + item.quantity + "</span>" +
-                        // Decrement by 1 — removes row only when quantity reaches 0
-                        "<button class='btn-decrement' onclick='decrementItem(" + item.id + ")'>-</button>" +
+                        "<button class='btn-qty plus'  onclick='incrementItem(" + item.id + ")'>&#43;</button>" +
                     "</div>";
                 list.appendChild(el);
             });
@@ -570,15 +540,27 @@
         }
 
         // ---------------------------------------------------------------------------
-        // Add item — POST /api/inventory
+        // Add item — name is required
         // ---------------------------------------------------------------------------
         function addItem() {
-            var name     = document.getElementById("input-name").value.trim();
-            var barcode  = document.getElementById("input-barcode").value.trim();
-            var quantity = parseInt(document.getElementById("input-quantity").value) || 1;
-            var status   = document.getElementById("add-status");
+            var nameInput = document.getElementById("input-name");
+            var name      = nameInput.value.trim();
+            var barcode   = document.getElementById("input-barcode").value.trim();
+            var quantity  = parseInt(document.getElementById("input-quantity").value) || 1;
+            var status    = document.getElementById("add-status");
 
-            if (!name) { status.textContent = "Name is required."; return; }
+            // Highlight the name field red and show error if empty
+            if (!name) {
+                nameInput.classList.add("invalid");
+                status.textContent = "Item name is required.";
+                status.className   = "add-status error";
+                nameInput.focus();
+                return;
+            }
+
+            nameInput.classList.remove("invalid");
+            status.textContent = "";
+            status.className   = "add-status";
 
             fetch(INVENTORY_URL, {
                 method: "POST",
@@ -589,21 +571,33 @@
             .then(function(data) {
                 if (data.success) {
                     status.textContent = "Added!";
-                    document.getElementById("input-name").value     = "";
+                    status.className   = "add-status";
+                    nameInput.value    = "";
                     document.getElementById("input-barcode").value  = "";
                     document.getElementById("input-quantity").value = 1;
                     setTimeout(function() { status.textContent = ""; }, 2000);
                     fetchInventory();
                 } else {
                     status.textContent = "Error: " + (data.error || "unknown");
+                    status.className   = "add-status error";
                 }
             })
-            .catch(function(err) { status.textContent = "Error: " + err.message; });
+            .catch(function(err) {
+                status.textContent = "Error: " + err.message;
+                status.className   = "add-status error";
+            });
         }
 
+        // Clear invalid state as soon as the user starts typing
+        document.getElementById("input-name").addEventListener("input", function() {
+            this.classList.remove("invalid");
+            var status = document.getElementById("add-status");
+            status.textContent = "";
+            status.className   = "add-status";
+        });
+
         // ---------------------------------------------------------------------------
-        // Decrement item — POST /api/inventory/decrement
-        // Reduces quantity by 1. Removes row from DB when quantity reaches 0.
+        // Decrement — removes row when quantity hits 0
         // ---------------------------------------------------------------------------
         function decrementItem(id) {
             fetch(INVENTORY_URL + "/decrement", {
@@ -612,14 +606,22 @@
                 body: JSON.stringify({ id: id })
             })
             .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    fetchInventory();
-                } else {
-                    console.error("Decrement failed:", data.error);
-                }
-            })
+            .then(function(data) { if (data.success) fetchInventory(); })
             .catch(function(err) { console.error("Decrement error:", err); });
+        }
+
+        // ---------------------------------------------------------------------------
+        // Increment — adds 1 to quantity
+        // ---------------------------------------------------------------------------
+        function incrementItem(id) {
+            fetch(INVENTORY_URL + "/increment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: id })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) { if (data.success) fetchInventory(); })
+            .catch(function(err) { console.error("Increment error:", err); });
         }
 
         // ---------------------------------------------------------------------------
@@ -628,7 +630,6 @@
         window.addEventListener("load", function() {
             pollVitals();
             setInterval(pollVitals, POLL_INTERVAL);
-
             fetchInventory();
             setInterval(fetchInventory, 2000);
         });
