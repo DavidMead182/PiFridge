@@ -40,25 +40,9 @@ The system instantly updates when:
 - the fridge door opens
 - temperature thresholds are exceeded
 
----
-
-## Real-Time Requirements
-
-| Event | Target Latency |
-|------|---------------|
-Barcode scan → item added | < TBC  
-Door open detection | < TBC 
-Temperature alert | < TBC  
-
-Implemented using event-driven programming (callbacks, threads, timers) instead of polling where possible.
-
----
-
 ## Documentation - update as we go
 
 - [BH1750 light sensor](docs/sensors.md)
-
----
 
 ## Hardware Requirements
 
@@ -84,7 +68,7 @@ Implemented using event-driven programming (callbacks, threads, timers) instead 
 - Add more as we go
 
 
-## Installation — Start to Finish
+## Installation — Clone to Running Program
 ### 1. Clone the repo
  
 ```bash
@@ -106,25 +90,3 @@ chmod +x run.sh
 ./run.sh
 ```
 
----
- 
-## File Structure
- 
-```
-PiFridge/
-├── config/
-│   └── pifridge.conf        # nginx site config (template)
-├── src/
-│   ├── BME680/              # Temperature/humidity sensor
-│   ├── BH1750/              # Light sensor + door detection
-│   ├── common/              # Shared I2C utilities
-│   ├── web_app/
-│   │   ├── index.html       # Frontend — served by nginx
-│   │   ├── pifridge_api.cpp # FastCGI endpoint
-│   │   └── CMakeLists.txt
-│   ├── main.cpp
-│   └── CMakeLists.txt
-├── docs/
-├── CMakeLists.txt
-└── README.md
-```
