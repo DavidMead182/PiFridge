@@ -21,6 +21,8 @@
 #include <thread>
 #include <vector>
 #include <algorithm>
+#include <sqlite3.h>
+#include <ctime>
 
 struct FridgeState {
     BME680Sample    vitals{};
@@ -45,6 +47,70 @@ void saveStateToJson(const FridgeState& state) {
                 << "}";
         outFile.close();
     }
+}
+
+// Upserts a camera-detected item into inventory.
+// Matches on name (no barcode for loose produce).
+// Increments quantity if already exists, inserts new row if not.
+static void addCameraItemToInventory(const std::string& name) {
+    static const char* DB_PATH = "/var/lib/pifridge/inventory.db";
+ 
+    sqlite3* db = nullptr;
+    if (sqlite3_open(DB_PATH, &db) != SQLITE_OK) {
+        std::cerr << "[Camera] Failed to open inventory DB\n";
+        return;
+    }
+ 
+    // Check if item already exists by name (no barcode for camera detections)
+    const char* selectQuery =
+        "SELECT id, quantity FROM inventory WHERE name = ? AND (barcode IS NULL OR barcode = '');";
+    sqlite3_stmt* stmt = nullptr;
+ 
+    if (sqlite3_prepare_v2(db, selectQuery, -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "[Camera] Failed to prepare select\n";
+        sqlite3_close(db);
+        return;
+    }
+ 
+    sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_STATIC);
+ 
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        // Exists — increment quantity
+        int id  = sqlite3_column_int(stmt, 0);
+        int qty = sqlite3_column_int(stmt, 1);
+        sqlite3_finalize(stmt);
+ 
+        const char* updateQuery = "UPDATE inventory SET quantity = ? WHERE id = ?;";
+        sqlite3_stmt* upStmt = nullptr;
+        if (sqlite3_prepare_v2(db, updateQuery, -1, &upStmt, nullptr) == SQLITE_OK) {
+            sqlite3_bind_int(upStmt, 1, qty + 1);
+            sqlite3_bind_int(upStmt, 2, id);
+            sqlite3_step(upStmt);
+            sqlite3_finalize(upStmt);
+            std::cout << "[Camera] Incremented inventory for: " << name << "\n";
+        }
+    } else {
+        // Does not exist — insert new row with empty barcode
+        sqlite3_finalize(stmt);
+ 
+        time_t now = time(nullptr);
+        char dateBuf[11];
+        strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%d", localtime(&now));
+ 
+        const char* insertQuery =
+            "INSERT INTO inventory (name, barcode, quantity, date_added) VALUES (?, '', 1, ?);";
+        sqlite3_stmt* insStmt = nullptr;
+ 
+        if (sqlite3_prepare_v2(db, insertQuery, -1, &insStmt, nullptr) == SQLITE_OK) {
+            sqlite3_bind_text(insStmt, 1, name.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insStmt, 2, dateBuf,      -1, SQLITE_STATIC);
+            sqlite3_step(insStmt);
+            sqlite3_finalize(insStmt);
+            std::cout << "[Camera] Added to inventory: " << name << "\n";
+        }
+    }
+ 
+    sqlite3_close(db);
 }
 // ---------------------------------------------------------------------------
 // Signal handling - Ctrl+C shuts everything down cleanly
@@ -162,14 +228,17 @@ int main() {
 
     camera.registerCallback([&](const CameraSnapshot& snapshot) {
         std::cout << "[Camera] image=" << snapshot.image_path << "\n";
-
+ 
         if (!snapshot.text.empty()) {
             std::cout << "[Camera] text=" << snapshot.text << "\n";
         }
-
+ 
+        // Add every detected object above confidence threshold to inventory
         for (const auto& obj : snapshot.objects) {
             std::cout << "[Camera] object=" << obj.label
-                    << " confidence=" << obj.confidence << "\n";
+                      << " confidence=" << obj.confidence << "\n";
+ 
+            addCameraItemToInventory(obj.label);
         }
     });
 
