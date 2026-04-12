@@ -53,6 +53,10 @@ TODO: <-- insert Pictures of it --> and 3d model
 ### Real Life Setup
 ![WhatsApp Image 2026-04-12 at 21 28 18](https://github.com/user-attachments/assets/6dc8ac35-a8f4-4e9a-965c-3e4624887d54)
 
+## Command For Dependencies
+
+sudo apt install pkg-config libcurl4-openssl-dev build-essential cmake libfcgi-dev
+
 ## Installation — Clone to Running Program
 ### 1. Clone the repo
  
@@ -88,10 +92,6 @@ Note: Tests covering direct GPIO writes and hardware-dependent classes are run s
 - [Common Includes](src/common/README.md)
 - [Main Program](src/README.md)
 
-
-## Command For Dependencies
-
-sudo apt install pkg-config libcurl4-openssl-dev build-essential cmake libfcgi-dev
 
 ## Social Media
  
