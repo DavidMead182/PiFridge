@@ -127,6 +127,37 @@ bool deleteItem(sqlite3* db, int id) {
     return ok;
 }
 
+bool decrementItem(sqlite3* db, int id) {
+    // Get current quantity
+    const char* selectQuery = "SELECT quantity FROM inventory WHERE id = ?;";
+    sqlite3_stmt* stmt = nullptr;
+ 
+    if (sqlite3_prepare_v2(db, selectQuery, -1, &stmt, nullptr) != SQLITE_OK) return false;
+    sqlite3_bind_int(stmt, 1, id);
+ 
+    if (sqlite3_step(stmt) != SQLITE_ROW) {
+        sqlite3_finalize(stmt);
+        return false;
+    }
+ 
+    int qty = sqlite3_column_int(stmt, 0);
+    sqlite3_finalize(stmt);
+ 
+    if (qty <= 1) {
+        // quantity will hit 0 — delete the row entirely
+        return deleteItem(db, id);
+    } else {
+        // decrement by 1
+        const char* updateQuery = "UPDATE inventory SET quantity = quantity - 1 WHERE id = ?;";
+        sqlite3_stmt* upStmt = nullptr;
+        if (sqlite3_prepare_v2(db, updateQuery, -1, &upStmt, nullptr) != SQLITE_OK) return false;
+        sqlite3_bind_int(upStmt, 1, id);
+        bool ok = (sqlite3_step(upStmt) == SQLITE_DONE);
+        sqlite3_finalize(upStmt);
+        return ok;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Simple JSON field extractor
 // Pulls the value of a JSON string field: "key": "value"
@@ -214,6 +245,19 @@ int main() {
                 responseBody = getAllItems(db);
             } else {
                 responseBody = "{\"error\": \"database unavailable\"}";
+            }
+        }
+
+        // POST /api/inventory/decrement — reduce quantity by 1, delete if reaches 0
+        else if (methodStr == "POST" && uriStr.find("/decrement") != std::string::npos) {
+            std::string body  = readPostBody(request);
+            std::string idStr = extractJsonString(body, "id");
+        
+            if (!idStr.empty() && db) {
+                bool ok = decrementItem(db, std::stoi(idStr));
+                responseBody = ok ? "{\"success\": true}" : "{\"error\": \"decrement failed\"}";
+            } else {
+                responseBody = "{\"error\": \"missing id\"}";
             }
         }
 

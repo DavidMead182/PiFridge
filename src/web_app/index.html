@@ -30,11 +30,9 @@
 
         body {
             font-family: var(--sans);
-            background: var(--bg);
             color: var(--text);
             min-height: 100vh;
             padding: 24px 16px 40px;
-            /* subtle cold gradient — like the inside of a fridge */
             background: linear-gradient(160deg, #ddeeff 0%, #eef3f7 40%, #f0f4f8 100%);
         }
 
@@ -43,13 +41,13 @@
         --------------------------------------------------------------------------- */
         header {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
             animation: fadeDown 0.5s ease both;
         }
 
         header h1 {
             font-family: var(--mono);
-            font-size: 1.4rem;
+            font-size: clamp(1.1rem, 4vw, 1.4rem);
             font-weight: 500;
             letter-spacing: 0.15em;
             text-transform: uppercase;
@@ -64,14 +62,14 @@
         }
 
         /* ---------------------------------------------------------------------------
-           Layout — single column, max width centered
+           Layout
         --------------------------------------------------------------------------- */
         .container {
             max-width: 560px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
         }
 
         /* ---------------------------------------------------------------------------
@@ -81,7 +79,7 @@
             background: var(--panel);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 20px 24px;
+            padding: 16px 18px;
             box-shadow: 0 2px 12px rgba(59,130,246,0.06);
             animation: fadeUp 0.4s ease both;
         }
@@ -93,12 +91,12 @@
 
         .card-label {
             font-family: var(--mono);
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             font-weight: 500;
             letter-spacing: 0.12em;
             text-transform: uppercase;
             color: var(--muted);
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
 
         /* ---------------------------------------------------------------------------
@@ -112,7 +110,7 @@
 
         .door-state {
             font-family: var(--mono);
-            font-size: 1.6rem;
+            font-size: clamp(1.2rem, 5vw, 1.6rem);
             font-weight: 500;
             transition: color 0.4s ease;
         }
@@ -127,6 +125,7 @@
             background: var(--closed);
             transition: background 0.4s ease;
             box-shadow: 0 0 0 4px rgba(34,197,94,0.15);
+            flex-shrink: 0;
         }
 
         .door-indicator.open {
@@ -136,9 +135,9 @@
 
         .door-lux {
             font-family: var(--mono);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--muted);
-            margin-top: 6px;
+            margin-top: 5px;
         }
 
         /* ---------------------------------------------------------------------------
@@ -147,20 +146,20 @@
         .vitals-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            gap: 8px;
         }
 
         .vital-item {
             background: linear-gradient(135deg, #f0f7ff, #e8f2fc);
             border: 1px solid var(--cold);
             border-radius: 12px;
-            padding: 14px 12px;
+            padding: 12px 8px;
             text-align: center;
         }
 
         .vital-value {
             font-family: var(--mono);
-            font-size: 1.3rem;
+            font-size: clamp(1rem, 4vw, 1.3rem);
             font-weight: 500;
             color: var(--text);
             line-height: 1;
@@ -168,40 +167,42 @@
 
         .vital-unit {
             font-family: var(--mono);
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--muted);
-            margin-top: 4px;
+            margin-top: 3px;
         }
 
         .vital-label {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--muted);
-            margin-top: 6px;
+            margin-top: 5px;
             letter-spacing: 0.04em;
         }
 
         /* ---------------------------------------------------------------------------
-           Inventory
+           Inventory — add form
         --------------------------------------------------------------------------- */
         .add-form {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
             border-bottom: 1px solid var(--border);
         }
 
         .add-form-row {
             display: flex;
-            gap: 8px;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
         .add-form input {
             flex: 1;
+            min-width: 80px;
             font-family: var(--sans);
             font-size: 0.85rem;
-            padding: 9px 12px;
+            padding: 8px 10px;
             border: 1px solid var(--border);
             border-radius: 10px;
             background: var(--bg);
@@ -215,7 +216,7 @@
         }
 
         .add-form input[type="number"] {
-            width: 72px;
+            width: 60px;
             flex: none;
         }
 
@@ -223,7 +224,7 @@
             font-family: var(--mono);
             font-size: 0.8rem;
             letter-spacing: 0.06em;
-            padding: 9px 18px;
+            padding: 8px 16px;
             background: var(--accent);
             color: #fff;
             border: none;
@@ -231,23 +232,26 @@
             cursor: pointer;
             transition: opacity 0.2s, transform 0.1s;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .btn-add:hover  { opacity: 0.88; }
         .btn-add:active { transform: scale(0.97); }
 
         .add-status {
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             color: var(--muted);
             min-height: 1em;
             font-family: var(--mono);
         }
 
-        /* Shelf-style inventory list */
+        /* ---------------------------------------------------------------------------
+           Inventory list — shelf style
+        --------------------------------------------------------------------------- */
         .inventory-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 7px;
         }
 
         .inventory-empty {
@@ -265,7 +269,8 @@
             background: linear-gradient(90deg, #f5f9ff, #eef3f7);
             border: 1px solid var(--shelf);
             border-radius: 10px;
-            padding: 11px 14px;
+            padding: 10px 12px;
+            gap: 8px;
             animation: fadeUp 0.25s ease both;
         }
 
@@ -273,49 +278,61 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
+            min-width: 0; /* allows text truncation */
         }
 
         .item-name {
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             font-weight: 500;
             color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .item-meta {
             font-family: var(--mono);
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .item-right {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
+            flex-shrink: 0;
         }
 
         .item-qty {
             font-family: var(--mono);
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: var(--accent);
             background: #eff6ff;
             border: 1px solid var(--cold);
             border-radius: 6px;
-            padding: 2px 8px;
+            padding: 2px 7px;
+            white-space: nowrap;
         }
 
-        .btn-delete {
+        /* Decrement button — styled as a subtle minus */
+        .btn-decrement {
             font-family: var(--mono);
-            font-size: 0.7rem;
+            font-size: 0.85rem;
+            font-weight: 500;
             color: var(--muted);
             background: none;
             border: 1px solid var(--border);
             border-radius: 6px;
-            padding: 4px 8px;
+            padding: 2px 9px;
             cursor: pointer;
             transition: color 0.2s, border-color 0.2s;
+            line-height: 1.4;
         }
 
-        .btn-delete:hover {
+        .btn-decrement:hover {
             color: var(--open);
             border-color: var(--open);
         }
@@ -327,6 +344,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
         }
 
         .conn-dot {
@@ -337,19 +356,20 @@
             background: var(--closed);
             margin-right: 6px;
             vertical-align: middle;
+            flex-shrink: 0;
         }
 
         .conn-dot.error { background: var(--open); }
 
         .conn-text {
             font-family: var(--mono);
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             color: var(--muted);
         }
 
         .last-updated {
             font-family: var(--mono);
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             color: var(--muted);
         }
 
@@ -364,6 +384,21 @@
         @keyframes fadeDown {
             from { opacity: 0; transform: translateY(-8px); }
             to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ---------------------------------------------------------------------------
+           Mobile — tighten up on very small screens
+        --------------------------------------------------------------------------- */
+        @media (max-width: 400px) {
+            body { padding: 16px 10px 32px; }
+
+            .card { padding: 14px 14px; }
+
+            .add-form input { font-size: 0.8rem; padding: 7px 8px; }
+
+            .vital-value { font-size: 1rem; }
+
+            .item-name { font-size: 0.82rem; }
         }
     </style>
 </head>
@@ -449,7 +484,7 @@
         const POLL_INTERVAL = 1000;
 
         // ---------------------------------------------------------------------------
-        // Vitals
+        // Vitals polling
         // ---------------------------------------------------------------------------
         function renderVitals(data) {
             document.getElementById("temperature").textContent = data.temperature.toFixed(1);
@@ -457,18 +492,16 @@
             document.getElementById("pressure").textContent    = data.pressure.toFixed(0);
             document.getElementById("lux").textContent         = data.lux.toFixed(1);
 
-            var doorEl   = document.getElementById("door-state");
-            var dotEl    = document.getElementById("door-indicator");
-            var isOpen   = data.door_open;
+            var doorEl = document.getElementById("door-state");
+            var dotEl  = document.getElementById("door-indicator");
+            var isOpen = data.door_open;
 
             doorEl.textContent = isOpen ? "Open" : "Closed";
             doorEl.className   = "door-state " + (isOpen ? "open" : "closed");
             dotEl.className    = "door-indicator" + (isOpen ? " open" : "");
 
             document.getElementById("last-updated").textContent = new Date().toLocaleTimeString();
-
-            var connDot = document.getElementById("conn-dot");
-            connDot.className = "conn-dot";
+            document.getElementById("conn-dot").className       = "conn-dot";
             document.getElementById("connection-status").textContent = "Connected";
         }
 
@@ -486,13 +519,11 @@
         }
 
         // ---------------------------------------------------------------------------
-        // Inventory
+        // Inventory — only re-renders when data changes to prevent flickering
         // ---------------------------------------------------------------------------
-        // Add this at the top of the script alongside other globals
         var lastInventoryJSON = "";
 
         function renderInventory(items) {
-            // Only re-render if data has actually changed — prevents flickering
             var newJSON = JSON.stringify(items);
             if (newJSON === lastInventoryJSON) return;
             lastInventoryJSON = newJSON;
@@ -518,7 +549,8 @@
                     "</div>" +
                     "<div class='item-right'>" +
                         "<span class='item-qty'>x" + item.quantity + "</span>" +
-                        "<button class='btn-delete' onclick='deleteItem(" + item.id + ")'>Remove</button>" +
+                        // Decrement by 1 — removes row only when quantity reaches 0
+                        "<button class='btn-decrement' onclick='decrementItem(" + item.id + ")'>-</button>" +
                     "</div>";
                 list.appendChild(el);
             });
@@ -537,6 +569,9 @@
                 });
         }
 
+        // ---------------------------------------------------------------------------
+        // Add item — POST /api/inventory
+        // ---------------------------------------------------------------------------
         function addItem() {
             var name     = document.getElementById("input-name").value.trim();
             var barcode  = document.getElementById("input-barcode").value.trim();
@@ -566,29 +601,37 @@
             .catch(function(err) { status.textContent = "Error: " + err.message; });
         }
 
-        function deleteItem(id) {
-            fetch(INVENTORY_URL + "/delete", {
+        // ---------------------------------------------------------------------------
+        // Decrement item — POST /api/inventory/decrement
+        // Reduces quantity by 1. Removes row from DB when quantity reaches 0.
+        // ---------------------------------------------------------------------------
+        function decrementItem(id) {
+            fetch(INVENTORY_URL + "/decrement", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id: id })
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (data.success) { fetchInventory(); }
+                if (data.success) {
+                    fetchInventory();
+                } else {
+                    console.error("Decrement failed:", data.error);
+                }
             })
-            .catch(function(err) { console.error("Delete error:", err); });
+            .catch(function(err) { console.error("Decrement error:", err); });
         }
 
         // ---------------------------------------------------------------------------
         // Start
         // ---------------------------------------------------------------------------
-    window.addEventListener("load", function() {
-        pollVitals();
-        setInterval(pollVitals, POLL_INTERVAL);
+        window.addEventListener("load", function() {
+            pollVitals();
+            setInterval(pollVitals, POLL_INTERVAL);
 
-        fetchInventory();
-        setInterval(fetchInventory, 2000); // poll every 2s, only re-renders if data changed
-    });
+            fetchInventory();
+            setInterval(fetchInventory, 2000);
+        });
     </script>
 
 </body>
