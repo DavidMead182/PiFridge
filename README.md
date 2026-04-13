@@ -19,6 +19,7 @@ TODO: <-- insert Pictures of it --> and 3d model
 - [Social Media](#social-media)
 - [Acknowledgements](#acknowledgements)
 - [Authors & Contributions](#authors--contributions)
+- [Future Work](#future-work)
 - [License](#license)
 
 ## Bill of Materials
@@ -116,6 +117,8 @@ Finally, we extend our thanks to the technicians for their support with hardware
 | Patrick Dawodu   | Webapp design  |
 | Ross Cameron   | Barcode sensor class, Main Program Integration, Code Refactoring |
 | Ryan Ho   | Object & Text Detection Classes, Main Program Integration |
+
+## Future Work
 
 ## License
 
