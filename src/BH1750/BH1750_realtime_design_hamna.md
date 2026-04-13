@@ -55,7 +55,7 @@ This avoids a sleep-based busy loop and keeps the callback path small and determ
 
 Sampling interval is configurable through `start(int intervalMs)`.
 
-During standalone Raspberry Pi validation, the demo was run with:
+During Raspberry Pi validation, the BH1750 path was run with:
 - `intervalMs = 500`
 - `openThresholdLux = 30`
 - `closeThresholdLux = 10`
@@ -72,11 +72,17 @@ Use these commands:
 
 ## Raspberry Pi validation
 
-Sensor detection on Pi:
-- `/dev/i2c-1`
-- address `0x23` visible in `i2cdetect`
+Validated locally with:
+- CMake configure
+- CMake build
+- CTest unit test
 
-Observed output during live run included:
+Validated on Raspberry Pi with live hardware:
+- BH1750 detected on I2C bus 1 at `0x23`
+- callback-based lux sampling worked on the Pi
+- door open and closed transitions were observed from live readings
+
+Observed Pi output included:
 
     door=open lux=425
     door=closed lux=0.833333
@@ -99,3 +105,11 @@ Do not reintroduce:
 - sleep-based timing loops
 - long sensor-processing logic in `main`
 - removal of module test coverage
+
+## Related PRs
+
+- [PR #25](https://github.com/DavidMead182/PiFridge/pull/25) Initial BH1750 light sensor work and Raspberry Pi hardware integration
+
+## Acknowledgements
+
+Threading, callback, and blocking I/O patterns were shaped by Dr. Bernd Porr's [*Realtime Embedded Coding in C++ under Linux*](https://berndporr.github.io/realtime_cpp_coding/) and by the course feedback on event-driven design. Software engineering structure, testing, and documentation practices were also informed by lectures from Dr. Chongfeng Wei.
