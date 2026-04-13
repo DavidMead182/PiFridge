@@ -1,3 +1,9 @@
+// Camera.cpp: Implements the Camera class which is responsible for:
+// - Capturing images from the Pi camera when the fridge door opens
+// - Running OCR for text detection (for best before dates)
+// - Running object detection to identify food items without labels
+// - Exporting captured data to JSON for use by the web server and inventory system
+
 #include "Camera.hpp"
 
 #include <algorithm>
@@ -15,13 +21,16 @@
 #include <cctype>
 #include <regex>
 
+// OpenCV for image processing
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
+// TensorFlow Lite for object detection
 #include <tensorflow/lite/interpreter.h>
 #include <tensorflow/lite/kernels/register.h>
 #include <tensorflow/lite/model.h>
 
+// Whitelist of food labels
 namespace {
 const std::unordered_set<std::string> kFoodLabels = {
     "banana",
@@ -45,10 +54,12 @@ Camera::Camera(const Config& config)
     : config_(config) {
 }
 
+// Register callback called after each snapshot
 void Camera::registerCallback(Callback cb) {
     callback_ = std::move(cb);
 }
 
+// Start camera thread
 void Camera::start() {
     if (running_) return;
 
@@ -63,33 +74,40 @@ void Camera::start() {
     }
 
     running_ = true;
+    // Start background thread for capturing images periodically when door is open
     thread_ = std::thread(&Camera::run, this);
 }
 
+// Stop camera thread
 void Camera::stop() {
     running_ = false;
     capture_requested_ = true;
     if (thread_.joinable()) thread_.join();
 }
 
+// Called when door state changes triggering immediate capture
 void Camera::setDoorOpen(bool isOpen) {
     door_open_ = isOpen;
     if (isOpen) capture_requested_ = true;
 }
 
+// Returns current door state
 bool Camera::isDoorOpen() const {
     return door_open_.load();
 }
 
+// Manually trigger a capture
 void Camera::triggerCaptureNow() {
     capture_requested_ = true;
 }
 
+// Thread-safe getter for last snapshot
 CameraSnapshot Camera::getLastSnapshot() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return last_snapshot_;
 }
 
+// Main thread loop: captures images when door is open or when capture is manually triggered, processes them, and calls the registered callback with the results
 void Camera::run() {
     while (running_) {
         if (door_open_.load() || capture_requested_.load()) {
@@ -109,6 +127,7 @@ void Camera::run() {
     }
 }
 
+// Captures image and run detection pipelines
 CameraSnapshot Camera::processFrame() {
     CameraSnapshot snapshot;
     snapshot.timestamp = nowIso8601();
@@ -137,11 +156,13 @@ bool Camera::ensureOutputDirectory() const {
     return !ec;
 }
 
+// Initialise TensoFlow Lite model and interpreter
 bool Camera::initialiseObjectDetector() {
     detector_init_attempted_ = true;
 
     labels_ = loadLabels(config_.label_path);
 
+    // Load TFLite model
     model_ = tflite::FlatBufferModel::BuildFromFile(config_.model_path.c_str());
     if (!model_) {
         std::cerr << "[Camera] Failed to load TFLite model: " << config_.model_path << "\n";
@@ -149,6 +170,7 @@ bool Camera::initialiseObjectDetector() {
         return false;
     }
 
+    // Build interpreter
     tflite::ops::builtin::BuiltinOpResolver resolver;
     tflite::InterpreterBuilder builder(*model_, resolver);
     builder(&interpreter_);
@@ -160,6 +182,7 @@ bool Camera::initialiseObjectDetector() {
 
     interpreter_->SetNumThreads(config_.num_threads);
 
+    // Allocate tensors
     if (interpreter_->AllocateTensors() != kTfLiteOk) {
         std::cerr << "[Camera] Failed to allocate TFLite tensors\n";
         interpreter_.reset();
@@ -172,6 +195,7 @@ bool Camera::initialiseObjectDetector() {
     return true;
 }
 
+// Helper function to build image path with timestamp
 std::string Camera::buildImagePath() const {
     const auto now = std::chrono::system_clock::now();
     const auto tt = std::chrono::system_clock::to_time_t(now);
@@ -184,7 +208,7 @@ std::string Camera::buildImagePath() const {
         << ".jpg";
     return oss.str();
 }
-
+ // Helper function to get current time in ISO 8601 format
 std::string Camera::nowIso8601() const {
     const auto now = std::chrono::system_clock::now();
     const auto tt = std::chrono::system_clock::to_time_t(now);
@@ -196,6 +220,7 @@ std::string Camera::nowIso8601() const {
     return oss.str();
 }
 
+// Helper function to replace tokens in command templates
 std::string Camera::replaceToken(std::string src, const std::string& token, const std::string& value) const {
     size_t pos = 0;
     while ((pos = src.find(token, pos)) != std::string::npos) {
@@ -204,7 +229,7 @@ std::string Camera::replaceToken(std::string src, const std::string& token, cons
     }
     return src;
 }
-
+ // Helper function to execute a shell command and capture its output
 std::string Camera::execCommand(const std::string& command) const {
     std::array<char, 256> buffer{};
     std::string result;
@@ -223,6 +248,7 @@ std::string Camera::execCommand(const std::string& command) const {
     return result;
 }
 
+// Runs Tesseract OCR on the captured image and extracts best before date text
 std::string Camera::runTextDetection(const std::string& imagePath) const {
     const std::string command = replaceToken(config_.tesseract_command, "{image}", imagePath);
     const std::string rawText = trim(execCommand(command));
@@ -233,6 +259,7 @@ std::string Camera::buildOcrImagePath(const std::string& imagePath) const {
     return imagePath + ".ocr.jpg";
 }
 
+// Extracts best before date text from raw OCR output using regex patterns and heuristics
 std::string Camera::extractBestBeforeText(const std::string& rawText) const {
     if (rawText.empty()) {
         return "";
@@ -295,6 +322,7 @@ std::string Camera::extractBestBeforeText(const std::string& rawText) const {
     return oss.str();
 }
 
+// Runs object detection on the captured image and returns a list of detected objects above confidence threshold
 std::vector<CameraDetection> Camera::runObjectDetection(const std::string& imagePath) {
     std::vector<CameraDetection> detections;
 
@@ -410,6 +438,7 @@ std::vector<CameraDetection> Camera::runObjectDetection(const std::string& image
     return detections;
 }
 
+// Helper function to load labels from file
 std::vector<std::string> Camera::loadLabels(const std::string& labelPath) const {
     std::vector<std::string> labels;
     std::ifstream in(labelPath);
@@ -428,6 +457,7 @@ std::vector<std::string> Camera::loadLabels(const std::string& labelPath) const 
     return labels;
 }
 
+// Helper function to write snapshot data to JSON file
 void Camera::writeSnapshotJson(const CameraSnapshot& snapshot) const {
     std::ofstream out(config_.json_output_path);
     if (!out.is_open()) {
@@ -459,6 +489,7 @@ void Camera::writeSnapshotJson(const CameraSnapshot& snapshot) const {
     out << "}\n";
 }
 
+// Helper function to trim whitespace from a string
 std::string Camera::trim(const std::string& s) {
     const auto start = s.find_first_not_of(" \t\n\r");
     if (start == std::string::npos) return "";
@@ -466,6 +497,7 @@ std::string Camera::trim(const std::string& s) {
     return s.substr(start, end - start + 1);
 }
 
+// Helper function to escape special characters in JSON strings
 std::string Camera::escapeJson(const std::string& s) {
     std::ostringstream oss;
     for (char c : s) {

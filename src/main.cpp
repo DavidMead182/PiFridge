@@ -200,32 +200,39 @@ int main() {
 
     scanner.start();
 
-    // Camera
+    // -----------------------------------------------------------------------
+    // Camera setup - captures image when door is open, runs OCR and object detection
+    // -----------------------------------------------------------------------
 
+    // Create camera config, directories for saving captured images and JSON output
     Camera::Config cameraConfig;
     cameraConfig.image_output_dir = "/tmp/pifridge_frames";
     cameraConfig.json_output_path = "/tmp/fridge_camera.json";
-    // cameraConfig.capture_command =
-    //     "rpicam-still -n --immediate --width 1280 --height 720 -o {image}";
-    //--zsl for better image capture
+
+    // Camera capture command
+    // --zsl for zero shutter lag, better capture timing
+    // Output sent to /dev/null to suppress logs
     cameraConfig.capture_command =
         "rpicam-still --zsl -n --immediate --width 1280 --height 720 -o {image} >/dev/null 2>&1";
     
-    // cameraConfig.tesseract_command =
-    //     "tesseract {image} stdout --psm 6 2>/dev/null";
-
-    //--psm 11 for sparse text, 6 for block of text, 7 for single line, 8 for single word. Can experiment for best results
-    //focus on common expiry date characters
+    // OCR configuration (Tesseract)
+    // --psm: 11 for sparse text, 6 for block of text, 7 for single line, 8 for single word.
+    // Whitelist to focus on common expiry date characters
     cameraConfig.tesseract_command =
         "tesseract {image} stdout --psm 11 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/:.- 2>/dev/null";
+    
+    // Object detection model and label file paths
     cameraConfig.model_path = "/home/pifridge/PiFridge/src/Camera/detect.tflite";
     cameraConfig.label_path = "/home/pifridge/PiFridge/src/Camera/labelmap.txt";
+    
+    // Capture parameters
     cameraConfig.interval = std::chrono::milliseconds(2000);
     cameraConfig.confidence_threshold = 0.7f;
     cameraConfig.num_threads = 2;
 
     Camera camera(cameraConfig);
 
+    // Register callback: runs every time a snapshot is taken
     camera.registerCallback([&](const CameraSnapshot& snapshot) {
         std::cout << "[Camera] image=" << snapshot.image_path << "\n";
  
@@ -233,7 +240,7 @@ int main() {
             std::cout << "[Camera] text=" << snapshot.text << "\n";
         }
  
-        // Add every detected object above confidence threshold to inventory
+        // Add every detected object above confidence threshold to inventory database
         for (const auto& obj : snapshot.objects) {
             std::cout << "[Camera] object=" << obj.label
                       << " confidence=" << obj.confidence << "\n";
@@ -241,7 +248,8 @@ int main() {
             addCameraItemToInventory(obj.label);
         }
     });
-
+    
+    // Start camera thread
     camera.start();
     
     // -----------------------------------------------------------------------
@@ -259,7 +267,7 @@ int main() {
             saveStateToJson(state); // Export to JSON whenever door state changes
         }
 
-        camera.setDoorOpen(isOpen);
+        camera.setDoorOpen(isOpen); // tell camera bout the door state so it can trigger immediate capture
  
         if (isOpen) {
             std::cout << "[Door] Opened (lux=" << lux << ") - Barcode scanner ON\n";
@@ -295,6 +303,7 @@ int main() {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
+    //----- Clean shutdown -----
     std::cout << "\nPiFridge shutting down...\n";
     lightSensor.stop();
     bme680.stop();

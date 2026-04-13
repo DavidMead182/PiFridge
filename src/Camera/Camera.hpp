@@ -1,3 +1,8 @@
+// Camera.hpp: Header for Camera handling:
+// - Image capture
+// - OCR text detection
+// - Object detection
+
 #ifndef CAMERA_HPP
 #define CAMERA_HPP
 
@@ -9,10 +14,13 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+// TensorFlow Lite forward declarations
 #include <tensorflow/lite/interpreter.h>
 #include <tensorflow/lite/model.h>
 #include <tensorflow/lite/kernels/register.h>
 
+// Detected object struct
 struct CameraDetection {
     std::string label;
     float confidence = 0.0f;
@@ -22,6 +30,7 @@ struct CameraDetection {
     float x_max = 0.0f;
 };
 
+// Snapshot of a camera capture
 struct CameraSnapshot {
     std::string timestamp;
     std::string image_path;
@@ -29,10 +38,13 @@ struct CameraSnapshot {
     std::vector<CameraDetection> objects;
 };
 
+// Main Camera class
 class Camera {
 public:
+    // Callback type for new snapshots
     using Callback = std::function<void(const CameraSnapshot&)>;
 
+    // Camera configuration
     struct Config {
         std::string image_output_dir = "/tmp/pifridge_frames";
         std::string json_output_path = "/tmp/fridge_camera.json";
@@ -40,13 +52,13 @@ public:
         std::string capture_command =
             "rpicam-still -n --immediate --width 1280 --height 720 -o {image}";
         std::string tesseract_command =
-            "tesseract {image} stdout --psm 6 2>/dev/null";
+            "tesseract {image} stdout --psm 11 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/:.- 2>/dev/null";
 
         std::string model_path = "/home/pifridge/PiFridge/src/Camera/detect.tflite";
         std::string label_path = "/home/pifridge/PiFridge/src/Camera/labelmap.txt";
 
         std::chrono::milliseconds interval{2000};
-        float confidence_threshold = 0.50f;
+        float confidence_threshold = 0.70f;
         int num_threads = 2;
         bool enable_text_detection = true;
         bool enable_object_detection = true;
@@ -57,19 +69,23 @@ public:
 
     void registerCallback(Callback cb);
 
-    void start();
-    void stop();
+    void start(); // starts capture thread
+    void stop(); // stops capture thread
 
-    void setDoorOpen(bool isOpen);
+    void setDoorOpen(bool isOpen); // triggers capture on door open
     bool isDoorOpen() const;
 
-    void triggerCaptureNow();
+    void triggerCaptureNow(); // manual capture
     CameraSnapshot getLastSnapshot() const;
 
 private:
+    // Thread loop
     void run();
+
+    // Capture and process a single frame
     CameraSnapshot processFrame();
 
+    // Helper functions
     bool ensureOutputDirectory() const;
     bool initialiseObjectDetector();
     std::string buildImagePath() const;
@@ -89,14 +105,17 @@ private:
     Config config_;
     Callback callback_;
 
+    // Thread safety for snapshot access
     mutable std::mutex mutex_;
     CameraSnapshot last_snapshot_;
 
+    // Thread and state control
     std::thread thread_;
     std::atomic<bool> running_{false};
     std::atomic<bool> door_open_{false};
     std::atomic<bool> capture_requested_{false};
 
+    // Object detection state
     std::vector<std::string> labels_;
     bool detector_ready_ = false;
     bool detector_init_attempted_ = false;
