@@ -11,6 +11,13 @@ Built as a real-time embedded systems project at the University of Glasgow.
 
 TODO: <-- insert Pictures of it --> and 3d model
 
+### 3D Model
+<img width="300" alt="image" src="https://github.com/user-attachments/assets/615abaeb-9660-43b0-bca5-6aa4b67e7beb" />
+<img width="300" alt="image" src="https://github.com/user-attachments/assets/90ecb3b9-c789-4267-973d-908e21f6930f" />
+<img width="300" alt="image" src="https://github.com/user-attachments/assets/c22c95cb-7ff4-4237-b2e1-6d4c1e10c32d" />
+
+
+
 ## Table of Contents
 - [Bill of Materials](#bill-of-materials)
 - [Circuit Setup](#circuit-setup)
