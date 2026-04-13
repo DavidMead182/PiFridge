@@ -15,7 +15,7 @@ This separation follows the Single Responsibility Principle: the driver speaks t
 ## Files
  
 | File | Purpose |
-|||
+|------|---------|
 | `BME680.hpp` / `BME680.cpp` | Low-level register driver and Bosch compensation formulas |
 | `BME680Sensor.hpp` / `BME680Sensor.cpp` | Threaded, callback-based event wrapper |
 | `CMakeLists.txt` | Builds the `bme680` static library |
@@ -28,7 +28,7 @@ This separation follows the Single Responsibility Principle: the driver speaks t
 A single fully-compensated reading returned on every callback. All values are in physical units — no raw ADC values are exposed.
  
 | Field | Type | Unit |
-||||
+|-------|------|------|
 | `temperature_c` | `float` | °C |
 | `pressure_hpa` | `float` | hPa |
 | `humidity_rh` | `float` | % RH |
@@ -39,7 +39,7 @@ A single fully-compensated reading returned on every callback. All values are in
 Configuration passed at construction. Safe defaults are provided so the sensor works out of the box.
  
 | Field | Default | Description |
-||||
+|-------|---------|-------------|
 | `osrs_t` | 4 | Temperature oversampling (×8) |
 | `osrs_p` | 3 | Pressure oversampling (×4) |
 | `osrs_h` | 2 | Humidity oversampling (×2) |
