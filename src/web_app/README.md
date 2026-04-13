@@ -19,7 +19,7 @@ nginx acts as the reverse proxy, routing `/api/fridge` to `pifridge_api` and `/a
 ## Files
 
 | File | Purpose |
-|||
+|------|---------|
 | `pifridge_api.cpp` | FastCGI endpoint — serves sensor data from `/tmp/fridge_data.json` |
 | `pifridge_inventory.cpp` | FastCGI endpoint — SQLite-backed inventory CRUD |
 | `index.html` | Single-page browser dashboard |
@@ -182,7 +182,7 @@ Open a browser and navigate to `http://<raspberry-pi-ip>/`.
 ## Latency
 
 | Event | Measured latency |
-|||
+|-------|------------------|
 | Sensor callback → `/tmp/fridge_data.json` written | [X µs] |
 | Browser poll → JSON delivered via nginx + FastCGI | [X ms] |
 | End-to-end: sensor reading → visible in browser | ~[X ms] (dominated by 1 s poll interval) |
@@ -208,7 +208,7 @@ Planned test cases:
 ## Dependencies
 
 | Library | Purpose |
-|||
+|---------|---------|
 | `libfcgi` (`fcgiapp.h`) | FastCGI protocol — communication between nginx and C++ processes |
 | `libsqlite3` | Embedded database for inventory persistence |
 | `nginx` | Reverse proxy — serves `index.html` and routes API requests to FastCGI sockets |
