@@ -112,7 +112,7 @@ Finally, we extend our thanks to the technicians for their support with hardware
 | Name              | Contributions                                         |
 |-------------------|-------------------------------------------------------|
 | David Mead   | BME680 sensor class, Nginx & Webapp Startup & Integration with Main Program, Main Program Integration |
-| Hamma Khalid   | BH1750 Light Sensor class |
+| Hamna Khalid   | BH1750 light sensor module, callback-based event-driven refactor of the light sensor path, door state controller logic, CMake test restoration for the BH1750 module, Raspberry Pi hardware validation of the BH1750 sensor path, and BH1750 module documentation |
 | Patrick Dawodu   | Webapp design  |
 | Ross Cameron   | Barcode sensor class, Main Program Integration, Code Refactoring |
 | Ryan Ho   | Object & Text Detection Classes, Main Program Integration |

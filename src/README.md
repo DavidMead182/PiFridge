@@ -21,7 +21,7 @@ This main.cpp Wires all sensor modules together, manages shared state, and drive
 ```
 src/
 ├── BarcodeScanner/         # Barcode scanner module (Ross Cameron)
-├── BH1750/                 # BH1750 light sensor module (Hamma Khalid)
+├── BH1750/                 # BH1750 light sensor module (Hamna Khalid)
 ├── BME680/                 # BME680 environmental sensor module (David Mead)
 ├── Camera/                 # Camera & object detection module (Ryan Ho)
 ├── common/                 # Shared I2C abstraction layer (David Mead)
@@ -174,7 +174,7 @@ Before running, ensure the FastCGI processes and nginx are started (see `run.sh`
 |------|--------------|
 | **David Mead** | Integration of BME680Sensor, BH1750/DoorLightController, and BarcodeScanner into `main.cpp`; `saveStateToJson` JSON handoff; camera object detection → inventory DB wiring; CMakeLists.txt (shared) |
 | **Ross Cameron** | BarcodeScanner module; CMakeLists.txt (shared) |
-| **Hamma Khalid** | BH1750 sensor module |
+| **Hamna Khalid** | BH1750 sensor module; callback-based event-driven refactor of the light sensor path; door state controller logic used by the main integration flow; CMake test restoration for the BH1750 module; Raspberry Pi validation of the BH1750 sensor path |
 | **Ryan Ho** | Camera detection module; Camera integration into `main.cpp`; CMakeLists.txt (shared) |
 
 
