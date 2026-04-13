@@ -129,9 +129,9 @@ static void upsertItem(sqlite3* db, const std::string& name, const std::string& 
 }
 
 // ================== fetch_product ==================
-void fetch_product(const std::string& number) {
+void fetch_product(const std::string& barcode) {
     const std::string url =
-        "https://world.openfoodfacts.net/api/v2/product/" + number + "?fields=product_name";
+        "https://world.openfoodfacts.net/api/v2/product/" + barcode + "?fields=product_name";
 
     CURL* curl = curl_easy_init();
     if (!curl) {
@@ -165,7 +165,7 @@ void fetch_product(const std::string& number) {
             size_t valPos = response.find(':', statusPos) + 1;
             while (valPos < response.size() && response[valPos] == ' ') valPos++;
             if (response[valPos] == '0') {
-                std::cout << "[BarcodeScanner] Product not found for barcode: " << number << " — skipping.\n";
+                std::cout << "[BarcodeScanner] Product not found for barcode: " << barcode << " — skipping.\n";
                 return;
             }
         }
@@ -175,7 +175,7 @@ void fetch_product(const std::string& number) {
     std::string productName = extractJsonString(response, "product_name");
 
     if (productName.empty()) {
-        std::cout << "[BarcodeScanner] No product name returned for: " << number << " — skipping.\n";
+        std::cout << "[BarcodeScanner] No product name returned for: " << barcode << " — skipping.\n";
         return;
     }
 
@@ -185,7 +185,7 @@ void fetch_product(const std::string& number) {
     sqlite3* db = openDb();
     if (!db) return;
 
-    upsertItem(db, productName, number);
+    upsertItem(db, productName, barcode);
     sqlite3_close(db);
 }
 
@@ -198,6 +198,7 @@ BarcodeScanner::~BarcodeScanner() {
 }
 
 void BarcodeScanner::stop() {
+    stopScan();
     running_ = false;
     if (wake_pipe_[1] >= 0) write(wake_pipe_[1], "x", 1);
     if (thread_.joinable()) thread_.join();
