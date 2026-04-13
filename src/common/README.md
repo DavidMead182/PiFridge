@@ -2,7 +2,6 @@
 
 Provides the concrete Linux I2C implementation used by all sensor modules in PiFridge.
 
----
 
 ## Overview
 
@@ -10,19 +9,17 @@ This module contains a single concrete class, `LinuxI2CDevice`, which implements
 
 This design follows the **Dependency Inversion Principle**: high-level sensor drivers depend on an abstraction, not on Linux internals. It also makes every sensor driver independently testable by injecting a mock `II2CDevice` without requiring physical hardware.
 
----
 
 ## Files
 
 | File | Purpose |
-|---|---|
+|||
 | `LinuxI2CDevice.hpp` | Declaration of the concrete Linux I2C implementation |
 | `LinuxI2CDevice.cpp` | Opens `/dev/i2c-*`, sets slave address, implements read/write |
 | `CMakeLists.txt` | Builds the `linux_i2c` static library |
 
 The `II2CDevice` interface itself lives at `include/II2CDevice.hpp` at the project root, so it can be included by any module without creating a circular dependency on `common`.
 
----
 
 ## Interface
 
@@ -36,7 +33,6 @@ void readReg (uint8_t reg, uint8_t* data, size_t len);
 - **`writeReg`** — writes a single byte to a register address. Used for configuration and control registers.
 - **`readReg`** — writes the register address then reads `len` bytes back in a single I2C transaction. Used for burst reads of sensor data and calibration coefficients.
 
----
 
 ## Usage
 
@@ -53,7 +49,6 @@ sensor.initialize(BME680Settings{});
 
 The sensor driver holds the `II2CDevice` by `std::unique_ptr<II2CDevice>` — it never knows it is talking to a Linux device specifically.
 
----
 
 ## Design Notes
 
@@ -66,7 +61,7 @@ Without `II2CDevice`, every sensor driver would `#include <linux/i2c-dev.h>` dir
 ### Error handling
 Both `writeReg` and `readReg` throw `std::runtime_error` if the underlying `write()` or `read()` syscall returns fewer bytes than expected. The constructor throws if the bus cannot be opened or if `ioctl(I2C_SLAVE)` fails. This ensures failures surface immediately rather than silently producing corrupt data.
 
----
+
 
 ## Building
 
@@ -83,7 +78,7 @@ Sensor modules declare their dependency in their own `CMakeLists.txt`:
 target_link_libraries(bme680 PRIVATE linux_i2c)
 ```
 
----
+
 
 ## Dependencies
 
@@ -92,13 +87,13 @@ target_link_libraries(bme680 PRIVATE linux_i2c)
 
 No additional packages are required beyond the standard build tools.
 
----
+
 
 ## Author
 
 **David Mead** — `LinuxI2CDevice` implementation, `II2CDevice` interface design, and CMake build configuration.
 
----
+
 
 ## Acknowledgements
 
