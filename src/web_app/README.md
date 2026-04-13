@@ -2,7 +2,7 @@
 
 Real-time browser dashboard for PiFridge, served over nginx via FastCGI.
 
----
+
 
 ## Overview
 
@@ -14,19 +14,19 @@ This module provides the complete web-facing layer of PiFridge. It consists of t
 
 nginx acts as the reverse proxy, routing `/api/fridge` to `pifridge_api` and `/api/inventory` to `pifridge_inventory` via Unix sockets. The nginx configuration lives in `config/pifridge.conf` and is documented in the main project README.
 
----
+
 
 ## Files
 
 | File | Purpose |
-|---|---|
+|||
 | `pifridge_api.cpp` | FastCGI endpoint — serves sensor data from `/tmp/fridge_data.json` |
 | `pifridge_inventory.cpp` | FastCGI endpoint — SQLite-backed inventory CRUD |
 | `index.html` | Single-page browser dashboard |
 | `CMakeLists.txt` | Builds `pifridge_api` and `pifridge_inventory` executables |
 | `test/` | Unit tests (see [Testing](#testing)) |
 
----
+
 
 ## Architecture
 
@@ -51,7 +51,7 @@ nginx (reverse proxy)
 ### Why a shared JSON file for sensor data?
 `pifridge_api` reads `/tmp/fridge_data.json` rather than querying sensors directly. This keeps the FastCGI process stateless and decoupled from the sensor thread — `main.cpp` owns the sensors and writes state on each callback, while `pifridge_api` only reads. Each HTTP request gets a fresh read with no shared mutable state between processes.
 
----
+
 
 ## API Reference
 
@@ -99,7 +99,7 @@ Decrements quantity by 1. Deletes the row automatically when quantity reaches 0.
 ### `POST /api/inventory/delete`
 Deletes an item by id. Request body: `{ "id": 1 }`
 
----
+
 
 ## Database
 
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS inventory (
 
 No migration tooling is required — the schema is stable and created idempotently on each startup.
 
----
+
 
 ## Frontend
 
@@ -130,7 +130,7 @@ No migration tooling is required — the schema is stable and created idempotent
 - Required field validation with inline error feedback
 - Responsive layout down to 400px wide (mobile-friendly for checking the fridge on your phone)
 
----
+
 
 ## Building
 
@@ -155,7 +155,7 @@ cmake .
 make
 ```
 
----
+
 
 ## Running
 
@@ -177,19 +177,19 @@ Then start nginx (see `config/pifridge.conf` README for the full nginx setup).
 
 Open a browser and navigate to `http://<raspberry-pi-ip>/`.
 
----
+
 
 ## Latency
 
 | Event | Measured latency |
-|---|---|
+|||
 | Sensor callback → `/tmp/fridge_data.json` written | [X µs] |
 | Browser poll → JSON delivered via nginx + FastCGI | [X ms] |
 | End-to-end: sensor reading → visible in browser | ~[X ms] (dominated by 1 s poll interval) |
 
 > **TODO:** Fill in with measured values from the running system.
 
----
+
 
 ## Testing
 
@@ -203,24 +203,24 @@ Planned test cases:
 - `extractJsonString` correctly parses string and integer fields
 - `pifridge_api` returns `{"error": "data not available yet"}` when the JSON file does not exist
 
----
+
 
 ## Dependencies
 
 | Library | Purpose |
-|---|---|
+|||
 | `libfcgi` (`fcgiapp.h`) | FastCGI protocol — communication between nginx and C++ processes |
 | `libsqlite3` | Embedded database for inventory persistence |
 | `nginx` | Reverse proxy — serves `index.html` and routes API requests to FastCGI sockets |
 
----
+
 
 ## Author
 
 **David Mead** — `pifridge_api.cpp`, `pifridge_inventory.cpp`, `index.html`, CMake build configuration.
 **Patrick Dawodu** — `index.html`
 
----
+
 
 ## Acknowledgements
 
