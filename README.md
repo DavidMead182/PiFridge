@@ -1,7 +1,7 @@
 # PiFridge — Real-Time Smart Fridge Inventory & Vitals Monitor
 [![Instagram](https://img.shields.io/badge/Instagram-pi_fridge-E4405F?logo=instagram&logoColor=white)](https://www.instagram.com/pi_fridge)
 
-TODO: <-- INSERT A LOGO HERE -->
+![pifridge_logo](https://github.com/user-attachments/assets/92124dd9-67de-48a7-8908-be75254f832a)
 
 PiFridge is a Raspberry Pi 5-powered real-time embedded system that scans food via barcodes or object detection and monitors fridge environmental conditions. This is to keep an accurate view of the contents of your fridge
 
