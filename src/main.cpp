@@ -194,6 +194,7 @@ int main() {
             std::lock_guard<std::mutex> lock(state.mutex);
             if (state.door_open) {
                 scanner.triggerScan();
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
         }
     });
