@@ -26,6 +26,8 @@ TODO: <-- insert Pictures of it --> and 3d model
 
 **Total Amount: £119.36**
 
+During this project only £42.17 was spent as raspberry pi, pi camera and breadboard & wires were provided thanks to Glasgow Uni
+
 ### Controller
 
 | Microcontroller     | Quantity | Cost (£) | Link |
