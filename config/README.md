@@ -2,7 +2,6 @@
 
 nginx reverse proxy configuration for PiFridge.
 
----
 
 ## Overview
 
@@ -10,7 +9,7 @@ This folder contains the nginx server block configuration that ties the PiFridge
 
 The configuration file is automatically copied to the correct location by `run.sh` — manual setup is only needed if you are configuring the system by hand.
 
----
+
 
 ## Files
 
@@ -18,7 +17,7 @@ The configuration file is automatically copied to the correct location by `run.s
 |---|---|
 | `pifridge.conf` | nginx server block — static file serving and FastCGI routing |
 
----
+
 
 ## Routing
 
@@ -33,7 +32,7 @@ The configuration file is automatically copied to the correct location by `run.s
 
 > **Note:** `/api/inventory/delete` must appear before `/api/inventory` in the config. nginx matches `location` blocks in order of specificity — a more specific prefix listed first ensures delete requests are not caught by the general `/api/inventory` block.
 
----
+
 
 ## Automatic Setup (recommended)
 
@@ -44,7 +43,6 @@ chmod +x run.sh
 ./run.sh
 ```
 
----
 
 ## Manual Setup
 
@@ -99,7 +97,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
----
+
 
 ## Dependencies
 
@@ -107,13 +105,12 @@ sudo systemctl reload nginx
 sudo apt install nginx
 ```
 
----
+
 
 ## Authors
 
 **David Mead** and **Patrick Dawodu** — nginx configuration, FastCGI socket routing, and `run.sh` integration.
 
----
 
 ## Acknowledgements
 
