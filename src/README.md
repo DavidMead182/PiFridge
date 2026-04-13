@@ -2,7 +2,7 @@
 
 This main.cpp Wires all sensor modules together, manages shared state, and drives the web interface via JSON handoff.
 
----
+
 
 ## Overview
 
@@ -14,7 +14,7 @@ This main.cpp Wires all sensor modules together, manages shared state, and drive
 4. Coordinates door-open/door-closed events to arm and disarm the barcode scanner and camera
 5. Handles `SIGINT`/`SIGTERM` for clean shutdown — all sensor threads are stopped and joined before exit
 
----
+
 
 ## File Structure
 
@@ -32,16 +32,16 @@ src/
 
 Each subdirectory has its own `README.md` documenting its classes, design decisions, and usage.
 
----
+
 
 ## Files
 
 | File | Purpose |
-|---|---|
+|------|---------|
 | `main.cpp` | Application entry point and integration layer |
 | `CMakeLists.txt` | Builds the `pifridge` executable and links all modules |
 
----
+
 
 ## Architecture
 
@@ -82,7 +82,7 @@ The `DoorLightController` receives raw lux readings from `Bh1750Sensor` and fire
 ### Camera inventory integration
 When the camera detects an object above the confidence threshold (0.7), `addCameraItemToInventory` upserts the item into the SQLite inventory database — incrementing quantity if the item already exists, or inserting a new row if not. This runs directly in the camera callback on the camera's worker thread, protected by SQLite's own serialisation.
 
----
+
 
 ## Shared State
 
@@ -97,12 +97,12 @@ struct FridgeState {
 
 All callbacks that write to `FridgeState` acquire `state.mutex` via `std::lock_guard` before modifying any field. `saveStateToJson` is always called inside the lock so the JSON file is never written with a partially updated state.
 
----
+
 
 ## Sensor Configuration
 
 | Sensor | Bus | Address | Interval |
-|---|---|---|---|
+|--------|-----|---------|----------|
 | BME680 | I2C bus 1 | `0x76` | 5000 ms |
 | BH1750 | `/dev/i2c-1` | `0x23` | 200 ms |
 | BarcodeScanner | `/dev/ttyAMA0` | — | Event-driven |
@@ -111,7 +111,7 @@ All callbacks that write to `FridgeState` acquire `state.mutex` via `std::lock_g
 ### BME680 settings
 
 | Parameter | Value |
-|---|---|
+|-----------|-------|
 | Temperature oversampling | ×8 (`osrs_t = 4`) |
 | Pressure oversampling | ×4 (`osrs_p = 3`) |
 | Humidity oversampling | ×2 (`osrs_h = 2`) |
@@ -119,7 +119,7 @@ All callbacks that write to `FridgeState` acquire `state.mutex` via `std::lock_g
 | Gas heater target | 320 °C |
 | Gas heater on-time | 150 ms |
 
----
+
 
 ## Signal Handling
 
@@ -135,7 +135,7 @@ SIGINT / SIGTERM
                 └── camera.stop()       — joins camera thread
 ```
 
----
+
 
 ## Building
 
@@ -154,7 +154,7 @@ sudo apt install libsqlite3-dev libcurl4-openssl-dev cmake build-essential
 
 All sensor module libraries (`bme680`, `bh1750`, `barcode_scanner`, `camera`, `linux_i2c`) are built as part of the same CMake project via `add_subdirectory`.
 
----
+
 
 ## Running
 
@@ -166,18 +166,18 @@ sudo ./build/src/pifridge
 
 Before running, ensure the FastCGI processes and nginx are started (see `run.sh` or the `web_app` and `config` READMEs).
 
----
+
 
 ## Authors & Contributions
 
 | Name | Contribution |
-|---|---|
+|------|--------------|
 | **David Mead** | Integration of BME680Sensor, BH1750/DoorLightController, and BarcodeScanner into `main.cpp`; `saveStateToJson` JSON handoff; camera object detection → inventory DB wiring; CMakeLists.txt (shared) |
 | **Ross Cameron** | BarcodeScanner module; CMakeLists.txt (shared) |
 | **Hamma Khalid** | BH1750 sensor module |
 | **Ryan Ho** | Camera detection module; Camera integration into `main.cpp`; CMakeLists.txt (shared) |
 
----
+
 
 ## Acknowledgements
 
