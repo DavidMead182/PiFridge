@@ -277,34 +277,66 @@ void BarcodeScanner::stopScan() {
     tcdrain(fd);
 }
 
-void BarcodeScanner::run() {
-    if (fd < 0) { std::cerr << "Port not open\n"; return; }
+bool isBarcode(const std::string& s) {
+    if (s.empty()) return false;
 
-    char ch;
-    std::string buffer;
+    for (unsigned char c : s) {
+        if (!std::isdigit(c)) return false;
+    }
+    return true;
+}
+
+void BarcodeScanner::run() {
+    if (fd < 0) {
+        std::cerr << "Port not open\n";
+        return;
+    }
+
+    char buffer[1024];
+    int minimumSizeOfBarcode = 5;
+    bool barcodeEndReceived;
+    std::string barcode;
 
     while (running_) {
+        barcodeEndReceived = false;
         fd_set readfds;
         FD_ZERO(&readfds);
         FD_SET(fd, &readfds);
         FD_SET(wake_pipe_[0], &readfds);
+
         int maxfd = std::max(fd, wake_pipe_[0]);
 
         int result = select(maxfd + 1, &readfds, nullptr, nullptr, nullptr);
-        if (result < 0) { std::cerr << "select failed: " << strerror(errno) << "\n"; break; }
+        if (result < 0) {
+            std::cerr << "select failed: " << strerror(errno) << "\n";
+            break;
+        }
 
-        if (FD_ISSET(wake_pipe_[0], &readfds)) break;
+        if (FD_ISSET(wake_pipe_[0], &readfds)) {
+            break;
+        }
 
         if (FD_ISSET(fd, &readfds)) {
-            ssize_t n = read(fd, &ch, 1);
+            ssize_t n = read(fd, buffer, sizeof(buffer) - 1);
+
             if (n > 0) {
-                if (ch == '\n') {
-                    if (!buffer.empty() && buffer.back() == '\r') buffer.pop_back();
-                    callback(buffer);
-                    buffer.clear();
-                } else {
-                    buffer += ch;
+                std::string resp(buffer, n);
+                std::cout << "[BarcodeScanner] Received chunk: " << resp << "\n";
+                while (!resp.empty() && (resp.back() == '\n' || resp.back() == '\r')) {
+                    resp.pop_back();
+                    barcodeEndReceived = true;
                 }
+
+
+                if (resp.size() >= (size_t)minimumSizeOfBarcode && barcodeEndReceived) {
+                    callback(barcode+resp);
+                    barcode.clear();
+                }else if (isBarcode(resp)){ // Check if the chunk looks like part of a barcode (digits only), ignore responses from barcode scanner for sensors turning on/off and other status messages
+                    std::cout << "[BarcodeScanner] Adding chunk to barcode: " << resp << "\n";
+                    barcode += resp;
+                }
+                
+
             } else if (n < 0) {
                 std::cerr << "read failed: " << strerror(errno) << "\n";
                 break;
