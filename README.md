@@ -81,25 +81,135 @@ sudo apt install -y nginx libfcgi-dev cmake pkg-config libcurl4-openssl-dev buil
 ```
  
 ### 3. Build & Run
+
+#### Option A — Using `run.sh` (Recommended)
+ 
+`run.sh` handles building, permissions, socket setup, and starting all processes in the correct order.
+ 
+> **Note:** Open `run.sh` and set `PI_USER` at the top to your Raspberry Pi username if it differs from `pifridge`.
  
 ```bash
 chmod +x run.sh
 ./run.sh
 ```
-Note: Tests covering direct GPIO writes and hardware-dependent classes are run separately via test executables in each subdirectory, as they require physical hardware to be connected.
-
-### 4. Open Website
-
-Accessing on Raspberry Pi
-
+ 
+Once running, the terminal will print the URL to open in your browser:
+ 
+```
+===========================================
+  PiFridge is running!
+  Open in your browser:
+    On this Pi:          http://localhost
+    From another device: http://<Pi's IP>
+===========================================
+```
+ 
+Stop all processes with `Ctrl+C`.
+ 
+> **Note:** Tests covering direct GPIO writes and hardware-dependent classes are run separately via test executables in each subdirectory, as they require physical hardware to be connected.
+ 
+---
+ 
+#### Option B — Manual Steps
+ 
+If you prefer to run each step yourself, follow the sequence below. Replace `pifridge` with your Raspberry Pi username throughout.
+ 
+**1. Build**
+ 
 ```bash
+cmake -B build .
+cmake --build build
+```
+ 
+**2. Copy web app files to nginx serve directory**
+ 
+```bash
+sudo mkdir -p /var/www/pifridge
+sudo cp src/web_app/index.html /var/www/pifridge/
+sudo chown -R www-data:www-data /var/www/pifridge
+```
+ 
+**3. Create socket directory with correct permissions**
+ 
+```bash
+sudo mkdir -p /var/run/pifridge
+sudo chown pifridge:www-data /var/run/pifridge
+sudo chmod 770 /var/run/pifridge
+```
+ 
+**4. Create database directory**
+ 
+```bash
+sudo mkdir -p /var/lib/pifridge
+sudo chown pifridge:pifridge /var/lib/pifridge
+```
+ 
+**5. Start nginx**
+ 
+```bash
+sudo systemctl start nginx
+```
+ 
+**6. Kill any existing PiFridge processes (if restarting)**
+ 
+```bash
+pkill -x pifridge_api       2>/dev/null || true
+pkill -x pifridge_inventory 2>/dev/null || true
+sleep 0.5
+```
+ 
+**7. Start the vitals FastCGI API**
+ 
+```bash
+./build/src/web_app/pifridge_api &
+```
+ 
+Then fix socket permissions:
+ 
+```bash
+sleep 1
+sudo chown pifridge:www-data /var/run/pifridge/pifridge.sock
+sudo chmod 660 /var/run/pifridge/pifridge.sock
+```
+ 
+**8. Start the inventory FastCGI API**
+ 
+```bash
+./build/src/web_app/pifridge_inventory &
+```
+ 
+Then fix socket permissions:
+ 
+```bash
+sleep 1
+sudo chown pifridge:www-data /var/run/pifridge/pifridge_inventory.sock
+sudo chmod 660 /var/run/pifridge/pifridge_inventory.sock
+```
+ 
+**9. Start the main sensor process**
+ 
+```bash
+sudo ./build/src/pifridge
+```
+ 
+### 4. Open Website
+ 
+**On the Raspberry Pi:**
+ 
+```
 http://localhost
 ```
-
-Accessing on onther device, must be on the same WiFi
-
+ 
+**From another device on the same WiFi:**
+ 
+```
+http://<IP address of Raspberry Pi>
+```
+ 
+To find the Pi's IP address:
+ 
 ```bash
-http://<ip of Raspberry Pi>
+hostname -I
 ```
 
 ## Documentation - update as we go
@@ -113,6 +223,20 @@ http://<ip of Raspberry Pi>
 - [Common Includes](src/common/README.md)
 - [Main Program](src/README.md)
 
+## Latency Timings
+
+| Sensor | Program | Time |
+|-------|---------|------|
+| BH1750 | <TODO: Demo> | XXms |
+| BH1750 | main.cpp | XXms |
+| BME680 | <TODO: Demo> | XXms |
+| BME680 | main.cpp | XXms |
+| Barcode Scanner  | <TODO: Demo> | XXms |
+| Barcode Scanner | main.cpp | XXms |
+| Pi Camera  | <TODO: Demo> | XXms |
+| Pi Camera | main.cpp | XXms |
+
+Note: Demo is the program that only runs that sensor code to get latency (scan to console), and main.cpp is the full integration, so from scan to display is the latency
 
 ## Social Media
  

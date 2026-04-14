@@ -116,12 +116,21 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 # ---------------------------------------------------------------------------
-# Start main pifridge process in foreground (needs sudo for I2C/GPIO)
+# Print access URLs
 # ---------------------------------------------------------------------------
+PI_IP=$(hostname -I | awk '{print $1}')
 echo ""
-echo "==> [PiFridge] Starting main sensor process..."
-echo "==> [PiFridge] Web app available at http://localhost"
-echo "    Press Ctrl+C to stop all processes."
+echo "==========================================="
+echo "  PiFridge is running!"
+echo "  Open in your browser:"
+echo "    On this Pi:        http://localhost"
+echo "    From another device: http://$PI_IP"
+echo "==========================================="
+echo "  Press Ctrl+C to stop all processes."
 echo ""
 
+# ---------------------------------------------------------------------------
+# Start main pifridge process in foreground (needs sudo for I2C/GPIO)
+# ---------------------------------------------------------------------------
+echo "==> [PiFridge] Starting main sensor process..."
 sudo "$REPO_DIR/build/src/pifridge"
