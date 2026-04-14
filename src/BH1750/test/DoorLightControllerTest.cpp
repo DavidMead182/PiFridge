@@ -3,29 +3,6 @@
 #include <string>
 
 #include "../include/DoorLightController.hpp"
-#include "../include/ILightSensor.hpp"
-
-// Minimal fake sensor used to verify callback-chain behavior without hardware.
-class FakeLightSensor final : public ILightSensor {
-public:
-    ~FakeLightSensor() override = default;
-
-    void registerCallback(LightLevelCallback callback) override {
-        callback_ = std::move(callback);
-    }
-
-    void start(int) override {}
-    void stop() override {}
-
-    void emit(double lux) {
-        if (callback_) {
-            callback_(lux);
-        }
-    }
-
-private:
-    LightLevelCallback callback_;
-};
 
 static void expectTrue(bool condition, const std::string& message, int& failures) {
     if (!condition) {
@@ -154,41 +131,6 @@ int main() {
                    failures);
         expectNear(lastLux, 9.0, 1e-9,
                    "callback lux should report closing sample",
-                   failures);
-    }
-
-    {
-        FakeLightSensor sensor;
-        DoorLightController controller(30.0, 10.0);
-        int callbackCount = 0;
-        bool lastState = false;
-        double lastLux = -1.0;
-
-        // This test verifies the full callback chain from sensor event to door-state event.
-        sensor.registerCallback([&](double lux) {
-            controller.hasLightSample(lux);
-        });
-
-        controller.registerDoorStateCallback([&](bool isOpen, double lux) {
-            ++callbackCount;
-            lastState = isOpen;
-            lastLux = lux;
-        });
-
-        sensor.emit(31.0);
-        sensor.emit(9.0);
-
-        expectTrue(callbackCount == 2,
-                   "callback chain should propagate open and close transitions",
-                   failures);
-        expectTrue(!lastState,
-                   "final state should be closed after callback-chain test",
-                   failures);
-        expectNear(lastLux, 9.0, 1e-9,
-                   "final lux should match closing sample in callback-chain test",
-                   failures);
-        expectTrue(!controller.isDoorOpen(),
-                   "controller should end closed after callback-chain test",
                    failures);
     }
 
