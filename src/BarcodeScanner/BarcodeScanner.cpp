@@ -296,6 +296,7 @@ void BarcodeScanner::run() {
     int minimumSizeOfBarcode = 5;
     bool barcodeEndReceived;
     std::string barcode;
+    const size_t MAX_BARCODE_LEN = 32;
 
     while (running_) {
         barcodeEndReceived = false;
@@ -321,7 +322,6 @@ void BarcodeScanner::run() {
 
             if (n > 0) {
                 std::string resp(buffer, n);
-                std::cout << "[BarcodeScanner] Received chunk: " << resp << "\n";
                 while (!resp.empty() && (resp.back() == '\n' || resp.back() == '\r')) {
                     resp.pop_back();
                     barcodeEndReceived = true;
@@ -332,8 +332,12 @@ void BarcodeScanner::run() {
                     callback(barcode+resp);
                     barcode.clear();
                 }else if (isBarcode(resp)){ // Check if the chunk looks like part of a barcode (digits only), ignore responses from barcode scanner for sensors turning on/off and other status messages
-                    std::cout << "[BarcodeScanner] Adding chunk to barcode: " << resp << "\n";
-                    barcode += resp;
+                    if (barcode.size() + resp.size() <= MAX_BARCODE_LEN) {
+                        barcode += resp;
+                    } else {
+                        std::cerr << "[BarcodeScanner] Barcode too long, resetting buffer\n";
+                        barcode.clear();
+                    }
                 }
                 
 
