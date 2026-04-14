@@ -25,6 +25,7 @@ TODO: <-- insert Pictures of it --> and 3d model
 - [Circuit Setup](#circuit-setup)
 - [Installation](#installation--clone-to-running-program)
 - [Documentation](#documentation---update-as-we-go)
+- [Latency Timings](#latency-timings)
 - [Social Media](#social-media)
 - [Acknowledgements](#acknowledgements)
 - [Authors & Contributions](#authors--contributions)
