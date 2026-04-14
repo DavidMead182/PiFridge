@@ -88,8 +88,21 @@ sudo apt install -y nginx libfcgi-dev cmake
 chmod +x run.sh
 ./run.sh
 ```
-
 Note: Tests covering direct GPIO writes and hardware-dependent classes are run separately via test executables in each subdirectory, as they require physical hardware to be connected.
+
+### 4. Open Website
+
+Accessing on Raspberry Pi
+
+```bash
+http://localhost
+```
+
+Accessing on onther device, must be on the same WiFi
+
+```bash
+http://<ip of Raspberry Pi>
+```
 
 ## Documentation - update as we go
 
