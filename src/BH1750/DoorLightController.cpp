@@ -17,12 +17,14 @@ DoorLightController::DoorLightController(double openThresholdLux,
 void DoorLightController::hasLightSample(double lux) {
     lastLux_ = lux;
 
+    // Open only when the lux reading crosses the upper threshold.
     if (!isOpen_ && lux >= openThresholdLux_) {
         isOpen_ = true;
         notifyDoorState(true, lux);
         return;
     }
 
+    // Close only when the lux reading falls below the lower threshold.
     if (isOpen_ && lux <= closeThresholdLux_) {
         isOpen_ = false;
         notifyDoorState(false, lux);

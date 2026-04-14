@@ -16,6 +16,7 @@
 #include <linux/i2c-dev.h>
 
 namespace {
+// BH1750 startup and measurement mode commands.
 constexpr std::uint8_t kCmdPowerOn = 0x01;
 constexpr std::uint8_t kCmdReset = 0x07;
 constexpr std::uint8_t kCmdContinuousHighRes = 0x10;
@@ -40,10 +41,12 @@ Bh1750Sensor::Bh1750Sensor(std::string i2cDevicePath, std::uint8_t i2cAddress)
         throw std::runtime_error("Bh1750Sensor ioctl I2C_SLAVE failed");
     }
 
+    // Power up the device and switch it into continuous high-resolution mode.
     writeCommand(kCmdPowerOn);
     writeCommand(kCmdReset);
     writeCommand(kCmdContinuousHighRes);
 
+    // eventfd is used to wake the blocked worker thread during shutdown.
     stopFd_ = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
     if (stopFd_ < 0) {
         ::close(fd_);
@@ -79,6 +82,7 @@ void Bh1750Sensor::start(int intervalMs) {
         throw std::logic_error("Bh1750Sensor already running");
     }
 
+    // Clear any stale stop signal before starting a new worker thread.
     std::uint64_t drained = 0;
     while (::read(stopFd_, &drained, sizeof(drained)) == static_cast<ssize_t>(sizeof(drained))) {
     }
@@ -94,6 +98,7 @@ void Bh1750Sensor::stop() {
 
     running_ = false;
 
+    // Wake the worker so it can observe running_ and exit cleanly.
     const std::uint64_t one = 1;
     (void)::write(stopFd_, &one, sizeof(one));
 
@@ -173,6 +178,7 @@ void Bh1750Sensor::runLoop(int intervalMs) {
             try {
                 const double lux = readLuxOnce();
 
+                // Copy the callback under the mutex, then invoke it outside the lock.
                 LightLevelCallback callbackCopy;
                 {
                     std::lock_guard<std::mutex> lock(callbackMutex_);
