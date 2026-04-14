@@ -174,7 +174,7 @@ Before running, ensure the FastCGI processes and nginx are started (see `run.sh`
 |------|--------------|
 | **David Mead** | Integration of BME680Sensor, BH1750/DoorLightController, and BarcodeScanner into `main.cpp`; `saveStateToJson` JSON handoff; camera object detection → inventory DB wiring; CMakeLists.txt (shared) |
 | **Ross Cameron** | BarcodeScanner module; CMakeLists.txt (shared) |
-| **Hamna Khalid** | BH1750 sensor module; CMake test restoration for the BH1750 module; Raspberry Pi validation of the BH1750 sensor path |
+| **Hamna Khalid** | `BH1750` sensor module; callback-based event-driven refactor of the light sensor path; `DoorLightController` logic; CMake test restoration for the BH1750 module; Raspberry Pi validation of the BH1750 sensor path |
 | **Ryan Ho** | Camera detection module; Camera integration into `main.cpp`; CMakeLists.txt (shared) |
 
 
