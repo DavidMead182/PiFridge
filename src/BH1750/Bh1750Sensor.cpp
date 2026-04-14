@@ -1,5 +1,6 @@
 #include "Bh1750Sensor.hpp"
 
+#include <chrono>
 #include <cerrno>
 #include <cstring>
 #include <iostream>
@@ -153,6 +154,9 @@ void Bh1750Sensor::runLoop(int intervalMs) {
     fds[1].fd = stopFd_;
     fds[1].events = POLLIN;
 
+    bool havePreviousDispatch = false;
+    std::chrono::steady_clock::time_point previousDispatchStart{};
+
     while (running_) {
         const int rc = ::poll(fds, 2, -1);
         if (rc < 0) {
@@ -176,7 +180,9 @@ void Bh1750Sensor::runLoop(int intervalMs) {
             }
 
             try {
+                const auto dispatchStart = std::chrono::steady_clock::now();
                 const double lux = readLuxOnce();
+                const auto afterRead = std::chrono::steady_clock::now();
 
                 // Copy the callback under the mutex, then invoke it outside the lock.
                 LightLevelCallback callbackCopy;
@@ -188,6 +194,33 @@ void Bh1750Sensor::runLoop(int intervalMs) {
                 if (callbackCopy) {
                     callbackCopy(lux);
                 }
+
+                const auto dispatchEnd = std::chrono::steady_clock::now();
+
+                const auto readUs =
+                    std::chrono::duration_cast<std::chrono::microseconds>(afterRead - dispatchStart).count();
+                const auto callbackUs =
+                    std::chrono::duration_cast<std::chrono::microseconds>(dispatchEnd - afterRead).count();
+                const auto totalUs =
+                    std::chrono::duration_cast<std::chrono::microseconds>(dispatchEnd - dispatchStart).count();
+
+                long long intervalUs = -1;
+                if (havePreviousDispatch) {
+                    intervalUs = std::chrono::duration_cast<std::chrono::microseconds>(
+                                     dispatchStart - previousDispatchStart)
+                                     .count();
+                }
+
+                std::cerr << "BH1750_METRIC"
+                          << " interval_us=" << intervalUs
+                          << " read_us=" << readUs
+                          << " callback_us=" << callbackUs
+                          << " total_us=" << totalUs
+                          << " lux=" << lux
+                          << "\n";
+
+                previousDispatchStart = dispatchStart;
+                havePreviousDispatch = true;
             }
             catch (const std::exception& e) {
                 std::cerr << "Bh1750Sensor sample error: " << e.what() << "\n";
