@@ -26,7 +26,6 @@ This separation follows the course feedback closely: sensor reads are no longer 
 | `DoorLightController.cpp` | Threshold and hysteresis logic for door open and closed state changes |
 | `CMakeLists.txt` | Builds `bh1750_logic`, `bh1750`, and the BH1750 unit test target |
 | `test/DoorLightControllerTest.cpp` | Unit test covering threshold, hysteresis, and callback firing behavior |
-| `BH1750_realtime_design_hamna.md` | Hamna Khalid's detailed realtime design and validation note for this module |
 
 ## Core Interfaces
 
@@ -249,8 +248,8 @@ This BH1750 module refactor and validation work includes:
 ## Related History and Links
 
 - [PR #25](https://github.com/DavidMead182/PiFridge/pull/25) Initial BH1750 light sensor work and Raspberry Pi hardware integration
-- [`fix/light-sensor-event-driven`](https://github.com/DavidMead182/PiFridge/tree/fix/light-sensor-event-driven/src/BH1750) Callback-based event-driven BH1750 refactor branch
-- [`fix/bh1750-integration-cleanup`](https://github.com/DavidMead182/PiFridge/tree/fix/bh1750-integration-cleanup/src/BH1750) Post-integration cleanup branch restoring BH1750 test coverage and documentation
+- [PR #35](https://github.com/DavidMead182/PiFridge/pull/35) Callback-based event-driven BH1750 refactor after feedback
+- [PR #45](https://github.com/DavidMead182/PiFridge/pull/45) Cleanup and integration follow-up for BH1750 testing and documentation
 
 ## I2C Address
 
