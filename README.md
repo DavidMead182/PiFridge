@@ -63,10 +63,6 @@ During this project only £42.17 was spent as raspberry pi, pi camera and breadb
 ### Real Life Setup
 ![WhatsApp Image 2026-04-12 at 21 28 18](https://github.com/user-attachments/assets/6dc8ac35-a8f4-4e9a-965c-3e4624887d54)
 
-## Command For Dependencies
-
-sudo apt install pkg-config libcurl4-openssl-dev build-essential cmake libfcgi-dev
-
 ## Installation — Clone to Running Program
 ### 1. Clone the repo
  
@@ -79,7 +75,7 @@ cd PiFridge
  
 ```bash
 sudo apt update
-sudo apt install -y nginx libfcgi-dev cmake
+sudo apt install -y nginx libfcgi-dev cmake pkg-config libcurl4-openssl-dev build-essential 
 ```
  
 ### 3. Build & Run
