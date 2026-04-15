@@ -59,6 +59,8 @@ void Camera::registerCallback(Callback cb) {
     callback_ = std::move(cb);
 }
 
+
+
 // Start camera thread
 void Camera::start() {
     if (running_) return;
@@ -107,20 +109,45 @@ CameraSnapshot Camera::getLastSnapshot() const {
     return last_snapshot_;
 }
 
-// Main thread loop: captures images when door is open or when capture is manually triggered, processes them, and calls the registered callback with the results
+
+// Main thread loop: captures images when door is open or when capture is manually triggered, processes them, and calls the registered callback with the results if there is detected objects
 void Camera::run() {
     while (running_) {
         if (door_open_.load() || capture_requested_.load()) {
             capture_requested_ = false;
 
             CameraSnapshot snapshot = processFrame();
+
             {
                 std::lock_guard<std::mutex> lock(mutex_);
                 last_snapshot_ = snapshot;
             }
 
             writeSnapshotJson(snapshot);
-            if (callback_) callback_(snapshot);
+
+            // 1. Object detection event
+            std::vector<std::string> detected_labels;
+
+            for (const auto& obj : snapshot.objects) {
+                if (obj.confidence >= config_.confidence_threshold) {
+                    detected_labels.push_back(obj.label);
+                }
+            }
+
+            if (!detected_labels.empty() && callback_) {
+                CameraEvent event;
+                event.type = CameraEvent::Type::Object;
+                event.labels = detected_labels;
+                callback_(event);
+            }
+
+            // 2. OCR / best-before event
+            if (!snapshot.text.empty() && callback_) {
+                CameraEvent event;
+                event.type = CameraEvent::Type::Text;
+                event.text = snapshot.text;
+                callback_(event);
+            }
         }
 
         std::this_thread::sleep_for(config_.interval);

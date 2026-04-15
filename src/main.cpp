@@ -115,7 +115,6 @@ static void addCameraItemToInventory(const std::string& name) {
 // ---------------------------------------------------------------------------
 // Signal handling - Ctrl+C shuts everything down cleanly
 // ---------------------------------------------------------------------------
- 
 static std::atomic<bool> g_quit{false};
 static void sigHandler(int) { g_quit = true; }
 
@@ -215,20 +214,15 @@ int main() {
 
     Camera camera(cameraConfig);
 
-    // Register callback: runs every time a snapshot is taken
-    camera.registerCallback([&](const CameraSnapshot& snapshot) {
-        std::cout << "[Camera] image=" << snapshot.image_path << "\n";
- 
-        if (!snapshot.text.empty()) {
-            std::cout << "[Camera] text=" << snapshot.text << "\n";
+    camera.registerCallback([&](const CameraEvent& event) {
+        if (event.type == CameraEvent::Type::Object) {
+            for (const auto& label : event.labels) {
+                addCameraItemToInventory(label);
+            }
         }
- 
-        // Add every detected object above confidence threshold to inventory database
-        for (const auto& obj : snapshot.objects) {
-            std::cout << "[Camera] object=" << obj.label
-                      << " confidence=" << obj.confidence << "\n";
- 
-            addCameraItemToInventory(obj.label);
+
+        if (event.type == CameraEvent::Type::Text) {
+            std::cout << "Best before detected: " << event.text << "\n";
         }
     });
     
