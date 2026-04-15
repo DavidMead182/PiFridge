@@ -14,9 +14,10 @@ https://github.com/user-attachments/assets/58a5558d-a3d2-4910-9e7c-18d99d581527
 ### 3D Model
 [Link to Fusion Files](3D_Model)
 
-<img width="250" alt="image" src="https://github.com/user-attachments/assets/615abaeb-9660-43b0-bca5-6aa4b67e7beb" />
-<img width="250" alt="image" src="https://github.com/user-attachments/assets/90ecb3b9-c789-4267-973d-908e21f6930f" />
-<img width="250" alt="image" src="https://github.com/user-attachments/assets/c22c95cb-7ff4-4237-b2e1-6d4c1e10c32d" />
+<img width="250" alt="image" src="https://github.com/user-attachments/assets/b929943d-58ae-4886-97f6-aacb84f34ed2" />
+<img width="250" alt="image" src="https://github.com/user-attachments/assets/533ffd28-ffdd-4b51-84ae-7e644565bd23" />
+<img width="250" alt="image" src="https://github.com/user-attachments/assets/849aa461-8347-4353-b137-0b18dcc71159" />
+
 
 
 
