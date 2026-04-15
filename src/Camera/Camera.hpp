@@ -38,11 +38,20 @@ struct CameraSnapshot {
     std::vector<CameraDetection> objects;
 };
 
+struct CameraEvent {
+    enum class Type { Object, Text };
+
+    Type type;
+
+    std::string text;
+    std::vector<std::string> labels;
+};
+
 // Main Camera class
 class Camera {
 public:
     // Callback type for new snapshots
-    using Callback = std::function<void(const CameraSnapshot&)>;
+    using Callback = std::function<void(const CameraEvent&)>;
 
     // Camera configuration
     struct Config {
