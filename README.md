@@ -9,7 +9,7 @@ Built as a real-time embedded systems project at the University of Glasgow.
 
 ## Demo
 
-TODO: <-- insert Pictures of it --> and 3d model
+https://github.com/user-attachments/assets/58a5558d-a3d2-4910-9e7c-18d99d581527
 
 ### 3D Model
 [Link to Fusion Files](3D_Model)
