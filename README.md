@@ -7,16 +7,22 @@ PiFridge is a Raspberry Pi 5-powered real-time embedded system that scans food v
 
 Built as a real-time embedded systems project at the University of Glasgow.
 
-## Demo
+## Demos
 
 https://github.com/user-attachments/assets/58a5558d-a3d2-4910-9e7c-18d99d581527
+
+### Webapp view
+
+| Desktop | Mobile Phone |
+|---------|--------------|
+|<img alt="image" src="https://github.com/user-attachments/assets/b3a85933-926a-4400-80bc-8c48482db348" />| <img alt="image" src="https://github.com/user-attachments/assets/132e4b3f-a930-48f6-a9f4-89cba6a48bce" /> |
 
 ### 3D Model
 [Link to Fusion Files](3D_Model)
 
-<img width="250" alt="image" src="https://github.com/user-attachments/assets/b929943d-58ae-4886-97f6-aacb84f34ed2" />
-<img width="250" alt="image" src="https://github.com/user-attachments/assets/533ffd28-ffdd-4b51-84ae-7e644565bd23" />
-<img width="250" alt="image" src="https://github.com/user-attachments/assets/849aa461-8347-4353-b137-0b18dcc71159" />
+| Component Layout | Case | Case & Lid |
+|------------------|------|------------|
+| <img alt="image" src="https://github.com/user-attachments/assets/b929943d-58ae-4886-97f6-aacb84f34ed2" /> | <img alt="image" src="https://github.com/user-attachments/assets/533ffd28-ffdd-4b51-84ae-7e644565bd23" /> | <img alt="image" src="https://github.com/user-attachments/assets/849aa461-8347-4353-b137-0b18dcc71159" /> |
 
 
 
