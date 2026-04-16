@@ -233,6 +233,24 @@ The BH1750 module test currently covers `DoorLightController` behavior:
 
 This test is integrated through CMake and exposed through CTest.
 
+## Latency Timings
+
+### Console
+| Run | Time |
+|-----|------|
+| 1 | 1134ms |
+| 2 | 1178ms |
+| 3 | 1151ms |
+| **Mean** | **1154ms** |
+
+### Webapp
+| Run | Time |
+|-----|------|
+| 1 | 2241ms |
+| 2 | 2259ms |
+| 3 | 2244ms |
+| **Mean** | **2248ms** |
+
 ## Author and Responsibility
 
 **Hamna Khalid**
@@ -244,6 +262,9 @@ This BH1750 module refactor and validation work includes:
 - CMake test restoration for the BH1750 module
 - Raspberry Pi validation of the BH1750 sensor path
 - BH1750 module documentation update
+
+**Ross Cameron**
+- Latency Timings
 
 ## Related History and Links
 
