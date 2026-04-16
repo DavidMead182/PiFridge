@@ -146,9 +146,30 @@ The `bme680` static library is linked into the main executable automatically via
  
 > **TODO:** Unit tests to be written. See `test/` directory.
 
+## Latency Timings
+
+### Console
+| Run | Time |
+|-----|------|
+| 1 | 184ms |
+| 2 | 185ms |
+| 3 | 184ms |
+| **Mean** | **184ms** |
+
+### Webapp
+| Run | Time |
+|-----|------|
+| 1 | 820ms |
+| 2 | 825ms |
+| 3 | 821ms |
+| **Mean** | **822ms** |
+
+
 ## Author
  
 **David Mead** — BME680 register driver (`BME680.cpp/.hpp`), Bosch compensation formulas, `BME680Sensor` threaded wrapper (`BME680Sensor.cpp/.hpp`), and CMake build configuration.
+
+**Ross Cameron** - Latency Timings
  
 ## I2C Address
  
