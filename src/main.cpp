@@ -247,11 +247,11 @@ int main() {
         camera.setDoorOpen(isOpen); // tell camera bout the door state so it can trigger immediate capture
  
         if (isOpen) {
-            std::cout << "[Door] Opened (lux=" << lux << ") - Barcode scanner ON\n";
+            std::cout << "[Door] Opened (lux=" << lux << ") - Barcode scanner ON, Camera ON\n";
             scanner.triggerScan();
             camera.triggerCaptureNow();
         } else {
-            std::cout << "[Door] Closed (lux=" << lux << ") - Barcode scanner OFF\n";
+            std::cout << "[Door] Closed (lux=" << lux << ") - Barcode scanner OFF, Camera OFF\n";
             scanner.stopScan();
         }
     });
