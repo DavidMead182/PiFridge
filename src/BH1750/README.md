@@ -238,18 +238,18 @@ This test is integrated through CMake and exposed through CTest.
 ### Console
 | Run | Time |
 |-----|------|
-| 1 | 1134ms |
-| 2 | 1178ms |
-| 3 | 1151ms |
-| **Mean** | **1154ms** |
+| 1 | 341μs |
+| 2 | 340μs |
+| 3 | 337μs |
+| **Mean** | **339μs** |
 
 ### Webapp
 | Run | Time |
 |-----|------|
-| 1 | 2241ms |
-| 2 | 2259ms |
-| 3 | 2244ms |
-| **Mean** | **2248ms** |
+| 1 | 635ms |
+| 2 | 641ms |
+| 3 | 638ms |
+| **Mean** | **638ms** |
 
 ## Author and Responsibility
 
