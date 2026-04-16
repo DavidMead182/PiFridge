@@ -2,8 +2,6 @@
 
 Real-time barcode scanning over serial UART with automatic product lookup and inventory persistence.
 
----
-
 ## Overview
 
 This module provides two responsibilities:
@@ -13,8 +11,6 @@ This module provides two responsibilities:
 
 The scanner is **demand-driven** — it is armed (`triggerScan`) when the fridge door opens and disarmed (`stopScan`) when the door closes. This avoids unnecessary scanning and power consumption when the fridge is closed.
 
----
-
 ## Files
 
 | File | Purpose |
@@ -23,8 +19,6 @@ The scanner is **demand-driven** — it is armed (`triggerScan`) when the fridge
 | `BarcodeScanner.cpp` | Serial port handling, barcode parsing, Open Food Facts API integration, SQLite upsert |
 | `CMakeLists.txt` | Builds the `barcode_scanner` static library |
 | `test/` | Unit tests (see [Testing](#testing)) |
-
----
 
 ## Usage
 
@@ -49,8 +43,6 @@ scanner.stopScan();
 // Clean shutdown
 scanner.stop();
 ```
-
----
 
 ## Real-Time Design
 
@@ -79,8 +71,6 @@ The scanner hardware is controlled by sending 9-byte command sequences over the 
 - `triggerScan()` — sends the hardware trigger command and flushes the RX buffer
 - `stopScan()` — sends the hardware stop command
 
----
-
 ## Open Food Facts Integration
 
 `fetch_product` makes an HTTPS GET request to:
@@ -96,20 +86,23 @@ On a successful response, the product name is extracted and written to the SQLit
 
 Products not found in the Open Food Facts database are silently skipped with a log message.
 
----
+## Latency Timings
 
-## Latency
+### Console
+| Run | Time |
+|-----|------|
+| 1 | 1134ms |
+| 2 | 1178ms |
+| 3 | 1151ms |
+| **Mean** | **1154ms** |
 
-| Event | Measured latency |
-|---|---|
-| Barcode scan complete → callback fired | [X–X ms] |
-| `fetch_product` API round-trip | [X–X ms] (network dependent) |
-| SQLite upsert | [X µs] |
-| End-to-end: scan → inventory updated | ~[X ms] |
-
-> **TODO:** Fill in with measured values from the running system.
-
----
+### Webapp
+| Run | Time |
+|-----|------|
+| 1 | 2241ms |
+| 2 | 2259ms |
+| 3 | 2244ms |
+| **Mean** | **2248ms** |
 
 ## Serial Port Configuration
 
@@ -172,7 +165,7 @@ make test
 
 ## Author
 
-**Ross Cameron** — `BarcodeScanner` class, serial port handling, barcode parsing, Open Food Facts API integration, SQLite upsert logic, and CMake build configuration.
+**Ross Cameron** — `BarcodeScanner` class, serial port handling, barcode parsing, Open Food Facts API integration, SQLite upsert logic, latency timings, and CMake build configuration.
 
 ---
 
