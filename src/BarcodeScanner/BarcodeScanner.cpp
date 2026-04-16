@@ -128,10 +128,11 @@ static void upsertItem(sqlite3* db, const std::string& name, const std::string& 
     }
 }
 
-// ================== fetch_product ==================
 void fetch_product(const std::string& barcode) {
-    const std::string url =
-        "https://world.openfoodfacts.net/api/v2/product/" + barcode + "?fields=product_name";
+    const std::string baseUrl =
+        "https://world.openfoodfacts.org/api/v2/product/";
+    const std::string fallbackBaseUrl =
+        "https://world.openfoodfacts.net/api/v2/product/";
 
     CURL* curl = curl_easy_init();
     if (!curl) {
@@ -141,47 +142,70 @@ void fetch_product(const std::string& barcode) {
 
     std::string response;
 
-    curl_easy_setopt(curl, CURLOPT_URL,           url.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPAUTH,       CURLAUTH_BASIC);
-    curl_easy_setopt(curl, CURLOPT_USERPWD,        "off:off");
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,  write_cb);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA,      &response);
+  
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
+    
+    std::string url = baseUrl + barcode + "?fields=product_name";
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
     CURLcode res = curl_easy_perform(curl);
+
+    long http_code = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+    // --- Fallback attempt (.net) ---
+    if (res != CURLE_OK || http_code >= 500) {
+        std::cerr << "[BarcodeScanner] Primary endpoint failed, trying fallback...\n";
+
+        response.clear();  
+
+        std::string fallbackUrl =
+            fallbackBaseUrl + barcode + "?fields=product_name";
+
+        curl_easy_setopt(curl, CURLOPT_URL, fallbackUrl.c_str());
+        res = curl_easy_perform(curl);
+
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    }
+
     curl_easy_cleanup(curl);
 
-    if (res != CURLE_OK) {
-        std::cerr << "[BarcodeScanner] Request failed: " << curl_easy_strerror(res) << "\n";
+    // --- Final error check ---
+    if (res != CURLE_OK || http_code != 200) {
+        std::cerr << "[BarcodeScanner] Request failed: "
+                  << curl_easy_strerror(res)
+                  << " (HTTP " << http_code << ")\n";
         return;
     }
 
-    // Check the API status field — "status": 1 means found, 0 means not found
     std::string statusStr = extractJsonString(response, "status");
+
     if (statusStr == "0" || statusStr.empty()) {
-        // Also check for status as integer not string — Open Food Facts returns int
         size_t statusPos = response.find("\"status\":");
         if (statusPos != std::string::npos) {
             size_t valPos = response.find(':', statusPos) + 1;
             while (valPos < response.size() && response[valPos] == ' ') valPos++;
             if (response[valPos] == '0') {
-                std::cout << "[BarcodeScanner] Product not found for barcode: " << barcode << " — skipping.\n";
+                std::cout << "[BarcodeScanner] Product not found for barcode: "
+                          << barcode << " — skipping.\n";
                 return;
             }
         }
     }
 
-    // Extract product name
     std::string productName = extractJsonString(response, "product_name");
 
     if (productName.empty()) {
-        std::cout << "[BarcodeScanner] No product name returned for: " << barcode << " — skipping.\n";
+        std::cout << "[BarcodeScanner] No product name returned for: "
+                  << barcode << " — skipping.\n";
         return;
     }
 
     std::cout << "[BarcodeScanner] Product found: " << productName << "\n";
 
-    // Write to SQLite inventory
     sqlite3* db = openDb();
     if (!db) return;
 
