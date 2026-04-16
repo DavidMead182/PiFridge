@@ -268,9 +268,13 @@ Finally, we extend our thanks to the technicians for their support with hardware
 | Hamna Khalid   | BH1750 light sensor module, Code Refactoring, door state controller logic, CMake test restoration, Raspberry Pi hardware validation of the BH1750 sensor path and combined BH1750/BME680 sensor setup in the lab, and BH1750 module documentation  |
 | Patrick Dawodu   | Webapp design, and Nginx configuration  |
 | Ross Cameron   | Barcode sensor class, Main Program Integration, Code Refactoring, Callback changes for Camera, latency measurements and 3D Model Design |
-| Ryan Ho   | Object & Text Detection Classes, Main Program Integration, and 3D Model Design |
+| Ryan Ho   | Object & Text Detection Classes, Main Program Integration, Documentation and 3D Model Design |
 
 ## Future Work
+
+- Creating Notifcations for when items will go out of data or when the fridge is not at the required temp
+- Creating an app for the device
+- Making the camera detect the Best Before Date more accuratly
 
 ## License
 
