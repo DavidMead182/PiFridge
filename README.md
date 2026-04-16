@@ -233,18 +233,18 @@ hostname -I
 
 ## Latency Timings
 
-| Sensor | Program | Time |
-|-------|---------|------|
-| BH1750 | <TODO: Demo> | XXms |
-| BH1750 | main.cpp | XXms |
-| BME680 | <TODO: Demo> | XXms |
-| BME680 | main.cpp | XXms |
-| Barcode Scanner  | <TODO: Demo> | XXms |
-| Barcode Scanner | main.cpp | XXms |
-| Pi Camera  | <TODO: Demo> | XXms |
-| Pi Camera | main.cpp | XXms |
+| Sensor | Operation | Mean Time |
+|--------|-----------|-----------|
+| BH1750 | Light change → console | 341μs |
+| BH1750 | Light change → webapp | 638ms |
+| BME680 | Data change → console | 184ms |
+| BME680 | Data change → webapp | 822ms |
+| Barcode Scanner | Scan → product name on console | 1154ms |
+| Barcode Scanner | Scan → product on webapp | 2248ms |
+| Pi Camera | Object detected → console | 832ms |
+| Pi Camera | Object detected → webapp | 1926ms |
 
-Note: Demo is the program that only runs that sensor code to get latency (scan to console), and main.cpp is the full integration, so from scan to display is the latency
+> **Note:** Latency was measured manually using a stopwatch. Each sensor was timed from data change to output appearing on both the console and webapp, with each measurement repeated 3 times. Full timing logs are available in the respective sensor readmes linked above.
 
 ## Social Media
  
@@ -267,7 +267,7 @@ Finally, we extend our thanks to the technicians for their support with hardware
 | David Mead   | BME680 sensor class, Nginx & Webapp Startup & Integration with Main Program, Main Program Integration, documentaton, and 3D model design |
 | Hamna Khalid   | BH1750 light sensor module, Code Refactoring, door state controller logic, CMake test restoration, Raspberry Pi hardware validation of the BH1750 sensor path and combined BH1750/BME680 sensor setup in the lab, and BH1750 module documentation  |
 | Patrick Dawodu   | Webapp design, and Nginx configuration  |
-| Ross Cameron   | Barcode sensor class, Main Program Integration, Code Refactoring, Callback changes for Camera and 3D Model Design |
+| Ross Cameron   | Barcode sensor class, Main Program Integration, Code Refactoring, Callback changes for Camera, latency measurements and 3D Model Design |
 | Ryan Ho   | Object & Text Detection Classes, Main Program Integration, and 3D Model Design |
 
 ## Future Work
