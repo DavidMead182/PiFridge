@@ -244,7 +244,7 @@ hostname -I
 | Pi Camera | Object detected → console | 832ms |
 | Pi Camera | Object detected → webapp | 1926ms |
 
-> **Note:** Latency was measured manually using a stopwatch. Each sensor was timed from data change to output appearing on both the console and webapp, with each measurement repeated 3 times. Full timing logs are available in the respective sensor readmes linked above.
+> **Note:** Each sensor was timed from data change to output appearing on both the console and webapp, with each measurement repeated 3 times. Full timing logs are available in the respective sensor readmes linked above.
 
 ## Social Media
  
