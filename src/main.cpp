@@ -208,7 +208,7 @@ int main() {
     cameraConfig.label_path = "/home/pifridge/PiFridge/src/Camera/labelmap.txt";
     
     // Capture parameters
-    cameraConfig.interval = std::chrono::milliseconds(2000);
+    cameraConfig.interval = std::chrono::milliseconds(200);
     cameraConfig.confidence_threshold = 0.7f;
     cameraConfig.num_threads = 2;
 
