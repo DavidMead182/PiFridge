@@ -170,10 +170,10 @@ int main() {
         std::cout << "[Barcode] Scanned: " << code << "\n";
         fetch_product(code);
 
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         // Re-arm the scanner if the door is still open
         {
             std::lock_guard<std::mutex> lock(state.mutex);
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             if (state.door_open) {
                 scanner.triggerScan();
             }
@@ -277,7 +277,7 @@ int main() {
     std::cout << "PiFridge running. Press Ctrl+C to stop.\n";
 
     while (!g_quit) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        pause(); // Wait for signal to quit (Ctrl+C)
     }
 
     //----- Clean shutdown -----
