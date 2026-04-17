@@ -106,7 +106,7 @@ All callbacks that write to `FridgeState` acquire `state.mutex` via `std::lock_g
 | BME680 | I2C bus 1 | `0x76` | 5000 ms |
 | BH1750 | `/dev/i2c-1` | `0x23` | 200 ms |
 | BarcodeScanner | `/dev/ttyAMA0` | — | Event-driven |
-| Camera | — | — | 2000 ms (door open only) |
+| Camera | — | — | 200 ms (door open or manual trigger) |
 
 ### BME680 settings
 

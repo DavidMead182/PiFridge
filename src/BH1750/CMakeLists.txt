@@ -39,3 +39,11 @@ target_link_libraries(door_light_controller_test PRIVATE
 )
 
 add_test(NAME door_light_controller_test COMMAND door_light_controller_test)
+
+add_executable(bh1750_demo
+    test/BH1750Demo.cpp
+)
+
+target_link_libraries(bh1750_demo PRIVATE
+    bh1750
+)

@@ -118,6 +118,29 @@ Run OCR:
 ```bash
 tesseract text.jpg stdout
 ```
+## Latency Timings
+
+### Console
+| Run | Time |
+|-----|------|
+| 1 | 837ms |
+| 2 | 806ms |
+| 3 | 853ms |
+| **Mean** | **832ms** |
+
+### Webapp
+| Run | Time |
+|-----|------|
+| 1 | 1922ms |
+| 2 | 1931ms |
+| 3 | 1925ms |
+| **Mean** | **1926ms** |
+
+## Contributions
+
+- **Ryan Ho**: Whole camera module for both object and text detection, and Cmake files
+- **Ross Cameron**: Latency Timings 
+
 
 ## Reference
 
