@@ -39,7 +39,7 @@ int main() {
         std::cout << "BH1750 demo running. Press Ctrl+C to stop.\n";
 
         while (!g_stop) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            pause();
         }
 
         sensor.stop();
