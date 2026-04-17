@@ -173,8 +173,8 @@ int main() {
         // Re-arm the scanner if the door is still open
         {
             std::lock_guard<std::mutex> lock(state.mutex);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             if (state.door_open) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                 scanner.triggerScan();
             }
         }
