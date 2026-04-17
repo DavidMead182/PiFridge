@@ -24,8 +24,9 @@ This separation follows the course feedback closely: sensor reads are no longer 
 | `Bh1750Sensor.cpp` | BH1750 I2C implementation, worker thread, `timerfd`, `eventfd`, and callback emission |
 | `include/DoorLightController.hpp` | Public door-state controller API and callback type |
 | `DoorLightController.cpp` | Threshold and hysteresis logic for door open and closed state changes |
-| `CMakeLists.txt` | Builds `bh1750_logic`, `bh1750`, and the BH1750 unit test target |
-| `test/DoorLightControllerTest.cpp` | Unit test covering threshold, hysteresis, and callback firing behavior |
+| `CMakeLists.txt` | Builds `bh1750_logic`, `bh1750`, the BH1750 unit test target, and the BH1750 demo target |
+| `test/DoorLightControllerTest.cpp` | Unit test covering threshold, hysteresis, callback firing, and callback-chain behavior |
+| `test/BH1750Demo.cpp` | Minimal hardware demo that prints lux readings and door-state transitions on a Raspberry Pi |
 
 ## Core Interfaces
 
@@ -196,6 +197,18 @@ cmake --build src/BH1750/build
 ctest --test-dir src/BH1750/build --output-on-failure
 ```
 
+### Run the BH1750 demo on Raspberry Pi hardware
+
+```bash
+./src/BH1750/build/bh1750_demo
+```
+
+This demo:
+- opens the BH1750 on `/dev/i2c-1`
+- prints live lux readings
+- prints door open and door closed transitions using the configured thresholds
+- is intended for Raspberry Pi hardware validation, not unit testing
+
 ### Build the full project
 From the project root:
 
@@ -224,14 +237,17 @@ sudo i2cdetect -y 1
 
 ## Testing
 
-The BH1750 module test currently covers `DoorLightController` behavior:
-- remains closed below open threshold
-- opens when lux crosses the open threshold
-- stays open while lux remains above close threshold
-- closes when lux drops below the close threshold
-- callback fires only on real state changes
+The BH1750 module test currently covers:
+- `DoorLightController` threshold and hysteresis behavior
+- callback firing only on real state changes
+- callback-chain propagation using a minimal fake `ILightSensor`
 
 This test is integrated through CMake and exposed through CTest.
+
+The separate `bh1750_demo` executable is used for live Raspberry Pi hardware checks of:
+- BH1750 I2C access
+- lux output on hardware
+- door open and closed transitions from real sensor readings
 
 ## Latency Timings
 
@@ -259,7 +275,7 @@ This BH1750 module refactor and validation work includes:
 - callback-based light sensor interface
 - event-driven sampling thread
 - door-state threshold and hysteresis logic
-- CMake test restoration for the BH1750 module
+- CMake test restoration and demo target wiring for the BH1750 module
 - Raspberry Pi validation of the BH1750 sensor path
 - BH1750 module documentation update
 
