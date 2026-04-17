@@ -1,5 +1,6 @@
 #include <cmath>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 #include "../include/DoorLightController.hpp"
@@ -189,6 +190,21 @@ int main() {
                    failures);
         expectTrue(!controller.isDoorOpen(),
                    "controller should end closed after callback-chain test",
+                   failures);
+    }
+
+    {
+        bool threw = false;
+
+        try {
+            DoorLightController controller(10.0, 30.0);
+            (void)controller;
+        } catch (const std::invalid_argument&) {
+            threw = true;
+        }
+
+        expectTrue(threw,
+                   "constructor should reject close threshold above open threshold",
                    failures);
     }
 
