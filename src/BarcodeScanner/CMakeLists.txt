@@ -16,3 +16,17 @@ target_link_libraries(barcode_scanner
     PUBLIC ${SQLITE_LIB}
     PUBLIC curl
 )
+
+add_executable(barcode_scanner_demo
+    test/BarcodeScannerDemo.cpp
+)
+
+target_link_libraries(barcode_scanner_demo
+    PRIVATE barcode_scanner
+    PUBLIC ${SQLITE_LIB}
+    PUBLIC curl
+)
+
+target_include_directories(barcode_scanner_demo
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} 
+)

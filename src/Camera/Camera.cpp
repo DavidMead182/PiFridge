@@ -162,7 +162,9 @@ CameraSnapshot Camera::processFrame() {
 
     const std::string captureCmd = replaceToken(config_.capture_command, "{image}", snapshot.image_path);
     if (std::system(captureCmd.c_str()) != 0) {
-        std::cerr << "[Camera] Capture failed: " << captureCmd << "\n";
+        if (running_) {
+            std::cerr << "[Camera] Capture failed: " << captureCmd << "\n";
+        }
         return snapshot;
     }
 

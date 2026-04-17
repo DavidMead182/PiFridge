@@ -15,3 +15,11 @@ target_link_libraries(camera
     PUBLIC ${OpenCV_LIBS}
     PUBLIC tensorflow-lite
 )
+
+add_executable(camera_demo test/CameraDemo.cpp)
+
+target_link_libraries(camera_demo
+    PRIVATE camera
+    PRIVATE ${OpenCV_LIBS}
+    PRIVATE tensorflow-lite
+)
