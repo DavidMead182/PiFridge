@@ -160,9 +160,14 @@ This confirmed:
 
 ## Latency Note
 
-During Raspberry Pi validation, the sampling interval was configured at `500 ms`.
+Two BH1750 timing contexts were used during development:
 
-Because door-state evaluation happens once on each timer wakeup, the designed response bound is one configured sample interval plus normal Linux scheduling overhead. For fridge door detection this is acceptable because the event is human-scale and not microsecond-critical.
+- **Module-level Raspberry Pi validation** used a `500 ms` sampling interval to confirm stable callback-based lux sampling and correct door open/closed transitions on hardware.
+- **Integrated PiFridge runtime configuration** in `main.cpp` uses a `200 ms` sampling interval for the live system.
+
+Because door-state evaluation happens once on each timer wakeup, the response bound is one configured sample interval plus normal Linux scheduling overhead. For fridge door detection this is acceptable because the event is human-scale rather than microsecond-critical.
+
+In the integrated system, the `200 ms` sampling interval was chosen to reduce visible delay in door-state detection while still keeping the BH1750 path simple, callback-based, and event-driven.
 
 ## Dependencies
 
@@ -242,7 +247,9 @@ The BH1750 module test currently covers:
 - callback firing only on real state changes
 - callback-chain propagation using a minimal fake `ILightSensor`
 
-This test is integrated through CMake and exposed through CTest.
+This test is integrated through CMake and exposed through CTest. It verifies controller logic and callback-chain behavior without requiring physical hardware.
+
+Direct BH1750 device access, live lux readings, and real sensor-triggered door transitions are verified separately on Raspberry Pi hardware using the `bh1750_demo` executable.
 
 The separate `bh1750_demo` executable is used for live Raspberry Pi hardware checks of:
 - BH1750 I2C access
