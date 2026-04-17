@@ -58,7 +58,7 @@ int main() {
     camera.triggerCaptureNow();
 
     while (!g_quit) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        pause(); // Wait for signal to quit (Ctrl+C)
     }
 
     std::cout << "\nShutting down camera...\n";

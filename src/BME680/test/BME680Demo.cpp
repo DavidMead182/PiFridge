@@ -42,7 +42,7 @@ int main() {
     bme680.start();
     
     while (!g_quit) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        pause();
     }
 
     std::cout << "\nShutting down temperature sensor...\n";
