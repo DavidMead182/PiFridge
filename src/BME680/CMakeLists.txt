@@ -15,3 +15,15 @@ target_include_directories(bme680
 target_link_libraries(bme680
     PRIVATE linux_i2c
 )
+
+add_executable(bme680_demo
+    test/BME680Demo.cpp
+)
+
+target_link_libraries(bme680_demo
+    PRIVATE bme680
+)
+
+target_include_directories(bme680_demo
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} 
+)

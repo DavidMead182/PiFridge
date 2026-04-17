@@ -172,8 +172,8 @@ int main() {
         std::cout << "[Barcode] Scanned: " << code << "\n";
         fetch_product(code);
 
-        // Re-arm the scanner immediately if the door is still open.
-        // Do not block inside the callback.
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        // Re-arm the scanner if the door is still open
         {
             std::lock_guard<std::mutex> lock(state.mutex);
             if (state.door_open) {
@@ -249,11 +249,11 @@ int main() {
         camera.setDoorOpen(isOpen); // tell camera bout the door state so it can trigger immediate capture
 
         if (isOpen) {
-            std::cout << "[Door] Opened (lux=" << lux << ") - Barcode scanner ON\n";
+            std::cout << "[Door] Opened (lux=" << lux << ") - Barcode scanner ON, Camera ON\n";
             scanner.triggerScan();
             camera.triggerCaptureNow();
         } else {
-            std::cout << "[Door] Closed (lux=" << lux << ") - Barcode scanner OFF\n";
+            std::cout << "[Door] Closed (lux=" << lux << ") - Barcode scanner OFF, Camera OFF\n";
             scanner.stopScan();
         }
     });
