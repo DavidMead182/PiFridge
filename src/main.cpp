@@ -12,7 +12,7 @@
 #include "BarcodeScanner.hpp"
 #include "Camera.hpp"
 #include <fstream>
-#include <iomanip> 
+#include <iomanip>
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <sqlite3.h>
 #include <ctime>
+#include <unistd.h>
 
 struct FridgeState {
     BME680Sample    vitals{};
@@ -33,7 +34,7 @@ struct FridgeState {
 
 
 // hANDSHAKE FUNCTION
-// writes the JSON file that the API will serve to the PIFRIDGE app 
+// writes the JSON file that the API will serve to the PIFRIDGE app
 void saveStateToJson(const FridgeState& state) {
     // We create the file in the current working directory (usually /build)
     std::ofstream outFile("/tmp/fridge_data.json");
@@ -54,32 +55,32 @@ void saveStateToJson(const FridgeState& state) {
 // Increments quantity if already exists, inserts new row if not.
 static void addCameraItemToInventory(const std::string& name) {
     static const char* DB_PATH = "/var/lib/pifridge/inventory.db";
- 
+
     sqlite3* db = nullptr;
     if (sqlite3_open(DB_PATH, &db) != SQLITE_OK) {
         std::cerr << "[Camera] Failed to open inventory DB\n";
         return;
     }
- 
+
     // Check if item already exists by name (no barcode for camera detections)
     const char* selectQuery =
         "SELECT id, quantity FROM inventory WHERE name = ? AND (barcode IS NULL OR barcode = '');";
     sqlite3_stmt* stmt = nullptr;
- 
+
     if (sqlite3_prepare_v2(db, selectQuery, -1, &stmt, nullptr) != SQLITE_OK) {
         std::cerr << "[Camera] Failed to prepare select\n";
         sqlite3_close(db);
         return;
     }
- 
+
     sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_STATIC);
- 
+
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         // Exists — increment quantity
         int id  = sqlite3_column_int(stmt, 0);
         int qty = sqlite3_column_int(stmt, 1);
         sqlite3_finalize(stmt);
- 
+
         const char* updateQuery = "UPDATE inventory SET quantity = ? WHERE id = ?;";
         sqlite3_stmt* upStmt = nullptr;
         if (sqlite3_prepare_v2(db, updateQuery, -1, &upStmt, nullptr) == SQLITE_OK) {
@@ -92,15 +93,15 @@ static void addCameraItemToInventory(const std::string& name) {
     } else {
         // Does not exist — insert new row with empty barcode
         sqlite3_finalize(stmt);
- 
+
         time_t now = time(nullptr);
         char dateBuf[11];
         strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%d", localtime(&now));
- 
+
         const char* insertQuery =
             "INSERT INTO inventory (name, barcode, quantity, date_added) VALUES (?, '', 1, ?);";
         sqlite3_stmt* insStmt = nullptr;
- 
+
         if (sqlite3_prepare_v2(db, insertQuery, -1, &insStmt, nullptr) == SQLITE_OK) {
             sqlite3_bind_text(insStmt, 1, name.c_str(), -1, SQLITE_STATIC);
             sqlite3_bind_text(insStmt, 2, dateBuf,      -1, SQLITE_STATIC);
@@ -109,9 +110,10 @@ static void addCameraItemToInventory(const std::string& name) {
             std::cout << "[Camera] Added to inventory: " << name << "\n";
         }
     }
- 
+
     sqlite3_close(db);
 }
+
 // ---------------------------------------------------------------------------
 // Signal handling - Ctrl+C shuts everything down cleanly
 // ---------------------------------------------------------------------------
@@ -130,7 +132,7 @@ int main() {
 // ---------------------------------------------------------------------------
 
     // -- Shared state --
-    
+
     BME680Settings sensorSettings;
     sensorSettings.osrs_t         = 4;
     sensorSettings.osrs_p         = 3;
@@ -170,11 +172,11 @@ int main() {
         std::cout << "[Barcode] Scanned: " << code << "\n";
         fetch_product(code);
 
-        // Re-arm the scanner if the door is still open
+        // Re-arm the scanner immediately if the door is still open.
+        // Do not block inside the callback.
         {
             std::lock_guard<std::mutex> lock(state.mutex);
             if (state.door_open) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                 scanner.triggerScan();
             }
         }
@@ -196,17 +198,17 @@ int main() {
     // Output sent to /dev/null to suppress logs
     cameraConfig.capture_command =
         "rpicam-still --zsl -n --immediate --width 1280 --height 720 -o {image} >/dev/null 2>&1";
-    
+
     // OCR configuration (Tesseract)
     // --psm: 11 for sparse text, 6 for block of text, 7 for single line, 8 for single word.
     // Whitelist to focus on common expiry date characters
     cameraConfig.tesseract_command =
         "tesseract {image} stdout --psm 11 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/:.- 2>/dev/null";
-    
+
     // Object detection model and label file paths
     cameraConfig.model_path = "/home/pifridge/PiFridge/src/Camera/detect.tflite";
     cameraConfig.label_path = "/home/pifridge/PiFridge/src/Camera/labelmap.txt";
-    
+
     // Capture parameters
     cameraConfig.interval = std::chrono::milliseconds(200);
     cameraConfig.confidence_threshold = 0.7f;
@@ -225,10 +227,10 @@ int main() {
             std::cout << "Best before detected: " << event.text << "\n";
         }
     });
-    
+
     // Start camera thread
     camera.start();
-    
+
     // -----------------------------------------------------------------------
     // BH1750 + DoorLightController - door detection
     // -----------------------------------------------------------------------
@@ -245,7 +247,7 @@ int main() {
         }
 
         camera.setDoorOpen(isOpen); // tell camera bout the door state so it can trigger immediate capture
- 
+
         if (isOpen) {
             std::cout << "[Door] Opened (lux=" << lux << ") - Barcode scanner ON\n";
             scanner.triggerScan();
@@ -265,7 +267,6 @@ int main() {
         doorController.hasLightSample(lux);
     });
 
-
     bme680.start();
     std::cout << "PiFridge: BME680 Sensor Thread Started" << std::endl;
 
@@ -277,7 +278,7 @@ int main() {
     std::cout << "PiFridge running. Press Ctrl+C to stop.\n";
 
     while (!g_quit) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        pause();
     }
 
     //----- Clean shutdown -----
@@ -300,7 +301,7 @@ int main() {
         // If Door Shut then
         // Turn barcode scanner off
         // Fridge vitals uploaded to web app using intervals
-        
+
         // If Door Open then
         // Barcode scanner on, and able to scan and update the web app whenever
         // Fridge vitals uploaded to web app using intervals
