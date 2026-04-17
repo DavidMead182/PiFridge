@@ -258,21 +258,28 @@ The separate `bh1750_demo` executable is used for live Raspberry Pi hardware che
 
 ## Latency Timings
 
-### Console
-| Run | Time |
-|-----|------|
-| 1 | 341μs |
-| 2 | 340μs |
-| 3 | 337μs |
-| **Mean** | **339μs** |
+Two timing contexts were measured during development:
 
-### Webapp
-| Run | Time |
-|-----|------|
-| 1 | 635ms |
-| 2 | 641ms |
-| 3 | 638ms |
-| **Mean** | **638ms** |
+1. **Module-level BH1750 validation on Raspberry Pi**
+   - sampling interval: `500 ms`
+   - purpose: confirm stable callback-based lux sampling and correct door open/closed transitions on hardware
+
+2. **Integrated PiFridge runtime**
+   - sampling interval: `200 ms`
+   - purpose: reduce visible delay in live door-state detection within the full system
+
+### Measured timings
+
+| Context | Event | Run 1 | Run 2 | Run 3 | Mean |
+|---------|-------|-------|-------|-------|------|
+| Integrated PiFridge runtime | Light change → console | 341μs | 340μs | 337μs | **339μs** |
+| Integrated PiFridge runtime | Light change → webapp | 635ms | 641ms | 638ms | **638ms** |
+
+### Design interpretation
+
+For the integrated PiFridge runtime, the BH1750 path uses a `200 ms` sampling interval. This means door-state response is bounded by one timer interval plus normal Linux scheduling overhead. The measured console latency is well below the configured interval, while the larger webapp latency is dominated by the wider system path rather than the BH1750 callback chain alone.
+
+For fridge-door detection, this latency is acceptable because the event is human-scale and the design goal is responsive state detection rather than microsecond-critical control.
 
 ## Author and Responsibility
 
@@ -282,7 +289,7 @@ This BH1750 module refactor and validation work includes:
 - callback-based light sensor interface
 - event-driven sampling thread
 - door-state threshold and hysteresis logic
-- CMake test restoration and demo target wiring for the BH1750 module
+- CMake test restoration, strong BH1750 test coverage, and demo target wiring for the BH1750 module
 - Raspberry Pi validation of the BH1750 sensor path
 - BH1750 module documentation update
 
