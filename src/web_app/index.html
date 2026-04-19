@@ -196,23 +196,34 @@
             transition: border-color 0.2s;
         }
 
-        .add-form input:focus { border-color: var(--accent); }
+        .add-form input:focus,
+        .edit-form input:focus { border-color: var(--accent); }
 
         /* Red border when required field is empty and user tried to submit */
-        .add-form input.invalid { border-color: var(--open); }
+        .add-form input.invalid,
+        .edit-form input.invalid { border-color: var(--open); }
 
-        .add-form input[type="number"] {
-            width: 60px;
+        .add-form input[type="number"],
+        .edit-form input[type="number"] {
+            width: 76px;
             flex: none;
         }
 
-        .btn-add {
+        .add-form input[type="date"],
+        .edit-form input[type="date"] {
+            min-width: 150px;
+        }
+
+        .btn-add,
+        .btn-secondary,
+        .btn-edit,
+        .btn-delete,
+        .btn-save,
+        .btn-cancel {
             font-family: var(--mono);
-            font-size: 0.8rem;
+            font-size: 0.76rem;
             letter-spacing: 0.06em;
-            padding: 8px 16px;
-            background: var(--accent);
-            color: #fff;
+            padding: 8px 12px;
             border: none;
             border-radius: 10px;
             cursor: pointer;
@@ -221,8 +232,39 @@
             flex-shrink: 0;
         }
 
-        .btn-add:hover  { opacity: 0.88; }
-        .btn-add:active { transform: scale(0.97); }
+        .btn-add,
+        .btn-save {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-secondary,
+        .btn-edit,
+        .btn-cancel {
+            background: #f4f7fb;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-delete {
+            background: #fff1f2;
+            color: var(--open);
+            border: 1px solid #fecdd3;
+        }
+
+        .btn-add:hover,
+        .btn-secondary:hover,
+        .btn-edit:hover,
+        .btn-delete:hover,
+        .btn-save:hover,
+        .btn-cancel:hover { opacity: 0.88; }
+
+        .btn-add:active,
+        .btn-secondary:active,
+        .btn-edit:active,
+        .btn-delete:active,
+        .btn-save:active,
+        .btn-cancel:active { transform: scale(0.97); }
 
         .add-status {
             font-size: 0.75rem;
@@ -250,14 +292,20 @@
 
         .inventory-item {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            flex-direction: column;
             background: linear-gradient(90deg, #f5f9ff, #eef3f7);
             border: 1px solid var(--shelf);
             border-radius: 10px;
             padding: 10px 12px;
-            gap: 8px;
+            gap: 10px;
             animation: fadeUp 0.25s ease both;
+        }
+
+        .item-view {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
         }
 
         .item-info {
@@ -280,16 +328,20 @@
             font-family: var(--mono);
             font-size: 0.65rem;
             color: var(--muted);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+
+            white-space: normal;        
+            overflow-wrap: anywhere;    
+            word-break: break-word;     
         }
 
-        .item-right {
+        .item-right,
+        .item-actions {
             display: flex;
             align-items: center;
             gap: 6px;
             flex-shrink: 0;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .item-qty {
@@ -327,6 +379,43 @@
         .btn-qty.minus:hover { color: var(--open);   border-color: var(--open); }
         .btn-qty.plus:hover  { color: var(--closed); border-color: var(--closed); }
 
+        .edit-form {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 2px;
+        }
+
+        .edit-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .edit-form input {
+            flex: 1;
+            min-width: 80px;
+            font-family: var(--sans);
+            font-size: 0.82rem;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .edit-status {
+            font-size: 0.7rem;
+            color: var(--muted);
+            font-family: var(--mono);
+            min-height: 1em;
+        }
+
+        .edit-status.error {
+            color: var(--open);
+        }
         /* Footer */
         .footer-card {
             display: flex;
@@ -423,10 +512,12 @@
 
             <div class="add-form">
                 <div class="add-form-row">
-                    <!-- required field — highlighted red if empty on submit -->
-                    <input type="text"   id="input-name"     placeholder="Item name *">
-                    <input type="text"   id="input-barcode"  placeholder="Barcode">
-                    <input type="number" id="input-quantity" value="1" min="1">
+                    <input type="text"   id="input-name"        placeholder="Item name *">
+                    <input type="text"   id="input-barcode"     placeholder="Barcode">
+                </div>
+                <div class="add-form-row">
+                    <input type="date"   id="input-best-before" placeholder="Best before">
+                    <input type="number" id="input-quantity"    value="1" min="1">
                     <button class="btn-add" onclick="addItem()">Add</button>
                 </div>
                 <div class="add-status" id="add-status"></div>
@@ -453,6 +544,19 @@
         const INVENTORY_URL = "/api/inventory";
         const POLL_INTERVAL = 1000;
 
+        var lastInventoryJSON = "";
+        var editingItemId = null;
+        var currentInventory = []; // ✅ NEW
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
         // ---------------------------------------------------------------------------
         // Vitals
         // ---------------------------------------------------------------------------
@@ -477,12 +581,12 @@
 
         function pollVitals() {
             fetch(VITALS_URL)
-                .then(function(r) {
+                .then(r => {
                     if (!r.ok) throw new Error("HTTP " + r.status);
                     return r.json();
                 })
                 .then(renderVitals)
-                .catch(function(err) {
+                .catch(err => {
                     document.getElementById("conn-dot").className = "conn-dot error";
                     document.getElementById("connection-status").textContent = "Error: " + err.message;
                 });
@@ -491,9 +595,9 @@
         // ---------------------------------------------------------------------------
         // Inventory
         // ---------------------------------------------------------------------------
-        var lastInventoryJSON = "";
-
         function renderInventory(items) {
+            currentInventory = items; // ✅ store latest inventory
+
             var newJSON = JSON.stringify(items);
             if (newJSON === lastInventoryJSON) return;
             lastInventoryJSON = newJSON;
@@ -509,47 +613,74 @@
             items.forEach(function(item) {
                 var el = document.createElement("div");
                 el.className = "inventory-item";
-                el.innerHTML =
-                    "<div class='item-info'>" +
-                        "<div class='item-name'>" + item.name + "</div>" +
-                        "<div class='item-meta'>" +
-                            (item.barcode ? item.barcode + " &middot; " : "") +
-                            "Added " + item.date_added +
-                        "</div>" +
-                    "</div>" +
-                    "<div class='item-right'>" +
-                        "<button class='btn-qty minus' onclick='decrementItem(" + item.id + ")'>&#8722;</button>" +
-                        "<span class='item-qty'>x" + item.quantity + "</span>" +
-                        "<button class='btn-qty plus'  onclick='incrementItem(" + item.id + ")'>&#43;</button>" +
-                    "</div>";
+
+                var metaParts = [];
+                if (item.barcode) metaParts.push(escapeHtml(item.barcode));
+                metaParts.push("Added " + escapeHtml(item.date_added));
+                if (item.best_before) metaParts.push("Best before " + escapeHtml(item.best_before));
+
+                if (editingItemId === item.id) {
+                    el.innerHTML =
+                        "<div class='edit-form'>" +
+                            "<div class='edit-row'>" +
+                                "<input type='text' id='edit-name-" + item.id + "' value='" + escapeHtml(item.name) + "' placeholder='Item name *'>" +
+                                "<input type='text' id='edit-barcode-" + item.id + "' value='" + escapeHtml(item.barcode || "") + "' placeholder='Barcode'>" +
+                            "</div>" +
+                            "<div class='edit-row'>" +
+                                "<input type='date' id='edit-best-before-" + item.id + "' value='" + escapeHtml(item.best_before || "") + "'>" +
+                                "<input type='number' id='edit-quantity-" + item.id + "' value='" + item.quantity + "' min='1'>" +
+                            "</div>" +
+                            "<div class='item-actions'>" +
+                                "<button class='btn-save' onclick='saveItemEdit(" + item.id + ")'>Save</button>" +
+                                "<button class='btn-cancel' onclick='cancelEdit()'>Cancel</button>" +
+                                "<button class='btn-delete' onclick='deleteItem(" + item.id + ")'>Delete</button>" +
+                            "</div>" +
+                            "<div class='edit-status' id='edit-status-" + item.id + "'></div>" +
+                        "</div>";
+                } else {
+                    el.innerHTML =
+                        "<div class='item-view'>" +
+                            "<div class='item-info'>" +
+                                "<div class='item-name'>" + escapeHtml(item.name) + "</div>" +
+                                "<div class='item-meta'>" + metaParts.join("<br>") + "</div>" +
+                            "</div>" +
+                            "<div class='item-right'>" +
+                                "<button class='btn-qty minus' onclick='decrementItem(" + item.id + ")'>&#8722;</button>" +
+                                "<span class='item-qty'>x" + item.quantity + "</span>" +
+                                "<button class='btn-qty plus' onclick='incrementItem(" + item.id + ")'>&#43;</button>" +
+                                "<button class='btn-edit' onclick='startEdit(" + item.id + ")'>Edit</button>" +
+                            "</div>" +
+                        "</div>";
+                }
+
                 list.appendChild(el);
             });
         }
 
         function fetchInventory() {
             fetch(INVENTORY_URL)
-                .then(function(r) {
+                .then(r => {
                     if (!r.ok) throw new Error("HTTP " + r.status);
                     return r.json();
                 })
                 .then(renderInventory)
-                .catch(function(err) {
+                .catch(err => {
                     document.getElementById("inventory-list").innerHTML =
                         "<div class='inventory-empty'>Error: " + err.message + "</div>";
                 });
         }
 
         // ---------------------------------------------------------------------------
-        // Add item — name is required
+        // Add item 
         // ---------------------------------------------------------------------------
         function addItem() {
-            var nameInput = document.getElementById("input-name");
-            var name      = nameInput.value.trim();
-            var barcode   = document.getElementById("input-barcode").value.trim();
-            var quantity  = parseInt(document.getElementById("input-quantity").value) || 1;
-            var status    = document.getElementById("add-status");
+            var nameInput   = document.getElementById("input-name");
+            var name        = nameInput.value.trim();
+            var barcode     = document.getElementById("input-barcode").value.trim();
+            var bestBefore  = document.getElementById("input-best-before").value;
+            var quantity    = parseInt(document.getElementById("input-quantity").value, 10) || 1;
+            var status      = document.getElementById("add-status");
 
-            // Highlight the name field red and show error if empty
             if (!name) {
                 nameInput.classList.add("invalid");
                 status.textContent = "Item name is required.";
@@ -562,20 +693,57 @@
             status.textContent = "";
             status.className   = "add-status";
 
+            // CHECK FOR EXISTING ITEM
+            var existingItem = currentInventory.find(function(item) {
+                return (
+                    item.name.toLowerCase() === name.toLowerCase() &&
+                    (item.barcode || "") === barcode &&
+                    (item.best_before || "") === bestBefore
+                );
+            });
+
+            // IF FOUND → INCREMENT
+            if (existingItem) {
+                fetch(INVENTORY_URL + "/increment", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: existingItem.id })
+                })
+                .then(r => r.json())
+                .then(function(data) {
+                    if (data.success) {
+                        status.textContent = "Quantity updated!";
+                        lastInventoryJSON = "";
+                        fetchInventory();
+                    }
+                })
+                .catch(function(err) {
+                    status.textContent = "Error: " + err.message;
+                    status.className   = "add-status error";
+                });
+                return;
+            }
+
+            // OTHERWISE CREATE NEW ITEM
             fetch(INVENTORY_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: name, barcode: barcode, quantity: quantity })
+                body: JSON.stringify({
+                    name: name,
+                    barcode: barcode,
+                    quantity: quantity,
+                    best_before: bestBefore
+                })
             })
-            .then(function(r) { return r.json(); })
+            .then(r => r.json())
             .then(function(data) {
                 if (data.success) {
                     status.textContent = "Added!";
-                    status.className   = "add-status";
                     nameInput.value    = "";
-                    document.getElementById("input-barcode").value  = "";
-                    document.getElementById("input-quantity").value = 1;
-                    setTimeout(function() { status.textContent = ""; }, 2000);
+                    document.getElementById("input-barcode").value     = "";
+                    document.getElementById("input-best-before").value = "";
+                    document.getElementById("input-quantity").value    = 1;
+                    lastInventoryJSON = "";
                     fetchInventory();
                 } else {
                     status.textContent = "Error: " + (data.error || "unknown");
@@ -588,40 +756,72 @@
             });
         }
 
-        // Clear invalid state as soon as the user starts typing
-        document.getElementById("input-name").addEventListener("input", function() {
-            this.classList.remove("invalid");
+        // ---------------------------------------------------------------------------
+        // Other functions unchanged
+        // ---------------------------------------------------------------------------
+        function clearAddFormError() {
+            document.getElementById("input-name").classList.remove("invalid");
             var status = document.getElementById("add-status");
             status.textContent = "";
             status.className   = "add-status";
-        });
+        }
 
-        // ---------------------------------------------------------------------------
-        // Decrement — removes row when quantity hits 0
-        // ---------------------------------------------------------------------------
+        function startEdit(id) {
+            editingItemId = id;
+            lastInventoryJSON = "";
+            fetchInventory();
+        }
+
+        function cancelEdit() {
+            editingItemId = null;
+            lastInventoryJSON = "";
+            fetchInventory();
+        }
+
+        function deleteItem(id) {
+            fetch(INVENTORY_URL + "/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: id })
+            })
+            .then(r => r.json())
+            .then(function(data) {
+                if (data.success) {
+                    editingItemId = null;
+                    lastInventoryJSON = "";
+                    fetchInventory();
+                }
+            });
+        }
+
         function decrementItem(id) {
             fetch(INVENTORY_URL + "/decrement", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id: id })
             })
-            .then(function(r) { return r.json(); })
-            .then(function(data) { if (data.success) fetchInventory(); })
-            .catch(function(err) { console.error("Decrement error:", err); });
+            .then(r => r.json())
+            .then(function(data) {
+                if (data.success) {
+                    lastInventoryJSON = "";
+                    fetchInventory();
+                }
+            });
         }
 
-        // ---------------------------------------------------------------------------
-        // Increment — adds 1 to quantity
-        // ---------------------------------------------------------------------------
         function incrementItem(id) {
             fetch(INVENTORY_URL + "/increment", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id: id })
             })
-            .then(function(r) { return r.json(); })
-            .then(function(data) { if (data.success) fetchInventory(); })
-            .catch(function(err) { console.error("Increment error:", err); });
+            .then(r => r.json())
+            .then(function(data) {
+                if (data.success) {
+                    lastInventoryJSON = "";
+                    fetchInventory();
+                }
+            });
         }
 
         // ---------------------------------------------------------------------------
@@ -632,8 +832,10 @@
             setInterval(pollVitals, POLL_INTERVAL);
             fetchInventory();
             setInterval(fetchInventory, 2000);
+
+            document.getElementById("input-name").addEventListener("input", clearAddFormError);
         });
-    </script>
+        </script>
 
 </body>
 </html>

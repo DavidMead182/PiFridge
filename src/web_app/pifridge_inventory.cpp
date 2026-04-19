@@ -4,6 +4,7 @@
 // GET  /api/inventory        — returns all items as JSON
 // POST /api/inventory        — adds a new item (JSON body)
 // POST /api/inventory/delete — deletes an item by id (JSON body)
+// POST /api/inventory/update — updates an item by id (JSON body)
 //
 // Build via CMake (see src/web_app/CMakeLists.txt)
 // Run:
@@ -15,6 +16,7 @@
 #include <sstream>
 #include <string>
 #include <ctime>
+#include <cctype>
 
 // Must match fastcgi_pass in config/pifridge.conf
 static const char* SOCKET_PATH = "/var/run/pifridge/pifridge_inventory.sock";
@@ -26,6 +28,28 @@ static const char* DB_PATH = "/var/lib/pifridge/inventory.db";
 // Database helpers
 // ---------------------------------------------------------------------------
 
+// Escapes strings for safe JSON output
+std::string jsonEscape(const char* value) {
+    if (!value) return "";
+
+    std::string input(value);
+    std::string out;
+    out.reserve(input.size());
+
+    for (char ch : input) {
+        switch (ch) {
+            case '\\': out += "\\\\"; break;
+            case '"':  out += "\\\""; break;
+            case '\n':  out += "\\n"; break;
+            case '\r':  out += "\\r"; break;
+            case '\t':  out += "\\t"; break;
+            default:    out += ch; break;
+        }
+    }
+
+    return out;
+}
+
 // Opens the database and creates the inventory table if it doesn't exist
 sqlite3* openDb() {
     sqlite3* db = nullptr;
@@ -36,11 +60,12 @@ sqlite3* openDb() {
 
     const char* createTable =
         "CREATE TABLE IF NOT EXISTS inventory ("
-        "  id         INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "  name       TEXT    NOT NULL,"
-        "  barcode    TEXT,"
-        "  quantity   INTEGER NOT NULL DEFAULT 1,"
-        "  date_added TEXT    NOT NULL"
+        "  id          INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "  name        TEXT    NOT NULL,"
+        "  barcode     TEXT,"
+        "  quantity    INTEGER NOT NULL DEFAULT 1,"
+        "  date_added  TEXT    NOT NULL,"
+        "  best_before TEXT"
         ");";
 
     char* errMsg = nullptr;
@@ -51,12 +76,29 @@ sqlite3* openDb() {
         return nullptr;
     }
 
+    const char* addBestBeforeColumn =
+        "ALTER TABLE inventory ADD COLUMN best_before TEXT;";
+
+    if (sqlite3_exec(db, addBestBeforeColumn, nullptr, nullptr, &errMsg) != SQLITE_OK) {
+        std::string err = errMsg ? errMsg : "";
+        sqlite3_free(errMsg);
+        errMsg = nullptr;
+
+        if (err.find("duplicate column name") == std::string::npos) {
+            std::cerr << "[inventory] Failed to add best_before column: " << err << "\n";
+            sqlite3_close(db);
+            return nullptr;
+        }
+    }
+
     return db;
 }
 
 // Returns all inventory items as a JSON array string
 std::string getAllItems(sqlite3* db) {
-    const char* query = "SELECT id, name, barcode, quantity, date_added FROM inventory ORDER BY date_added DESC;";
+    const char* query =
+        "SELECT id, name, barcode, quantity, date_added, best_before "
+        "FROM inventory ORDER BY date_added DESC, id DESC;";
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_prepare_v2(db, query, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -75,14 +117,16 @@ std::string getAllItems(sqlite3* db) {
         const char* name     = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         const char* barcode  = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         int         quantity = sqlite3_column_int(stmt, 3);
-        const char* date     = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+        const char* date        = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+        const char* bestBefore  = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
 
         json << "{"
-             << "\"id\":"       << id                           << ","
-             << "\"name\":\""   << (name    ? name    : "")     << "\","
-             << "\"barcode\":\"" << (barcode ? barcode : "")    << "\","
-             << "\"quantity\":" << quantity                      << ","
-             << "\"date_added\":\"" << (date ? date : "")       << "\""
+             << "\"id\":" << id << ","
+             << "\"name\":\"" << jsonEscape(name) << "\","
+             << "\"barcode\":\"" << jsonEscape(barcode) << "\","
+             << "\"quantity\":" << quantity << ","
+             << "\"date_added\":\"" << jsonEscape(date) << "\","
+             << "\"best_before\":\"" << jsonEscape(bestBefore) << "\""
              << "}";
     }
 
@@ -92,14 +136,14 @@ std::string getAllItems(sqlite3* db) {
 }
 
 // Inserts a new item — returns true on success
-bool addItem(sqlite3* db, const std::string& name, const std::string& barcode, int quantity) {
+bool addItem(sqlite3* db, const std::string& name, const std::string& barcode, int quantity, const std::string& bestBefore) {
     // Get current date as YYYY-MM-DD
     time_t now = time(nullptr);
     char dateBuf[11];
     strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%d", localtime(&now));
 
     const char* query =
-        "INSERT INTO inventory (name, barcode, quantity, date_added) VALUES (?, ?, ?, ?);";
+        "INSERT INTO inventory (name, barcode, quantity, date_added, best_before) VALUES (?, ?, ?, ?, ?);";
     sqlite3_stmt* stmt = nullptr;
 
     if (sqlite3_prepare_v2(db, query, -1, &stmt, nullptr) != SQLITE_OK) return false;
@@ -108,6 +152,7 @@ bool addItem(sqlite3* db, const std::string& name, const std::string& barcode, i
     sqlite3_bind_text(stmt, 2, barcode.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_int (stmt, 3, quantity);
     sqlite3_bind_text(stmt, 4, dateBuf,         -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 5, bestBefore.c_str(), -1, SQLITE_STATIC);
 
     bool ok = (sqlite3_step(stmt) == SQLITE_DONE);
     sqlite3_finalize(stmt);
@@ -165,6 +210,26 @@ bool incrementItem(sqlite3* db, int id) {
     if (sqlite3_prepare_v2(db, updateQuery, -1, &stmt, nullptr) != SQLITE_OK) return false;
     sqlite3_bind_int(stmt, 1, id);
     bool ok = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    return ok;
+}
+
+// Updates an item
+bool updateItem(sqlite3* db, int id, const std::string& name, const std::string& barcode,
+                int quantity, const std::string& bestBefore) {
+    const char* updateQuery =
+        "UPDATE inventory SET name = ?, barcode = ?, quantity = ?, best_before = ? WHERE id = ?;";
+    sqlite3_stmt* stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, updateQuery, -1, &stmt, nullptr) != SQLITE_OK) return false;
+
+    sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, barcode.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 3, quantity);
+    sqlite3_bind_text(stmt, 4, bestBefore.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 5, id);
+
+    bool ok = (sqlite3_step(stmt) == SQLITE_DONE) && (sqlite3_changes(db) > 0);
     sqlite3_finalize(stmt);
     return ok;
 }
@@ -285,6 +350,26 @@ int main() {
         }
 
         // ------------------------------------------------------------------
+        // POST /api/inventory/update — edit an item by id
+        // ------------------------------------------------------------------
+        else if (methodStr == "POST" && uriStr.find("/update") != std::string::npos) {
+            std::string body       = readPostBody(request);
+            std::string idStr      = extractJsonString(body, "id");
+            std::string name       = extractJsonString(body, "name");
+            std::string barcode    = extractJsonString(body, "barcode");
+            std::string qtyStr     = extractJsonString(body, "quantity");
+            std::string bestBefore = extractJsonString(body, "best_before");
+            int quantity           = qtyStr.empty() ? 1 : std::stoi(qtyStr);
+
+            if (!idStr.empty() && !name.empty() && quantity > 0 && db) {
+                bool ok = updateItem(db, std::stoi(idStr), name, barcode, quantity, bestBefore);
+                responseBody = ok ? "{\"success\": true}" : "{\"error\": \"update failed\"}";
+            } else {
+                responseBody = "{\"error\": \"missing id, name, or invalid quantity\"}";
+            }
+        }
+
+        // ------------------------------------------------------------------
         // POST /api/inventory/delete — delete an item by id
         // ------------------------------------------------------------------
         else if (methodStr == "POST" && uriStr.find("/delete") != std::string::npos) {
@@ -306,11 +391,12 @@ int main() {
             std::string body     = readPostBody(request);
             std::string name     = extractJsonString(body, "name");
             std::string barcode  = extractJsonString(body, "barcode");
-            std::string qtyStr   = extractJsonString(body, "quantity");
-            int         quantity = qtyStr.empty() ? 1 : std::stoi(qtyStr);
+            std::string qtyStr     = extractJsonString(body, "quantity");
+            std::string bestBefore = extractJsonString(body, "best_before");
+            int         quantity   = qtyStr.empty() ? 1 : std::stoi(qtyStr);
 
-            if (!name.empty() && db) {
-                bool ok = addItem(db, name, barcode, quantity);
+            if (!name.empty() && quantity > 0 && db) {
+                bool ok = addItem(db, name, barcode, quantity, bestBefore);
                 responseBody = ok ? "{\"success\": true}" : "{\"error\": \"insert failed\"}";
             } else {
                 responseBody = "{\"error\": \"missing name\"}";
