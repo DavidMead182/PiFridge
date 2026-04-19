@@ -85,7 +85,7 @@ cd PiFridge
  
 ```bash
 sudo apt update
-sudo apt install -y nginx libfcgi-dev cmake pkg-config libcurl4-openssl-dev build-essential 
+sudo apt install -y nginx libfcgi-dev cmake pkg-config libcurl4-openssl-dev build-essential libtensorflow-lite-dev libopencv-dev libsqlite3-dev
 ```
  
 ### 3. Build & Run
