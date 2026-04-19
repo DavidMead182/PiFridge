@@ -264,11 +264,11 @@ Finally, we extend our thanks to the technicians for their support with hardware
  
 | Name              | Contributions                                         |
 |-------------------|-------------------------------------------------------|
-| David Mead   | BME680 sensor class, Nginx & Webapp Startup & Integration with Main Program, Main Program Integration, documentaton, and 3D model design |
+| David Mead   | BME680 sensor class, Nginx & Webapp Startup & Integration with Main Program, Main Program Integration, cmakelists, bash run script, documentaton, and 3D model design |
 | Hamna Khalid   | BH1750 light sensor module, Code Refactoring, door state controller logic, CMake test restoration, Raspberry Pi hardware validation of the BH1750 sensor path and combined BH1750/BME680 sensor setup in the lab, and BH1750 module documentation  |
 | Patrick Dawodu   | Webapp design, Nginx configuration, and 3D Model Design |
-| Ross Cameron   | Barcode sensor class, Main Program Integration, Code Refactoring, Callback changes for Camera, Latency measurements and product assembly, Inventory UI Improvements |
-| Ryan Ho   | Object & Text Detection Classes, Main Program Integration, Documentation and 3D Model Design, Inventory UI Improvements |
+| Ross Cameron   | Barcode sensor class, Main Program Integration, Code Refactoring, Callback changes for Camera, Latency measurements, cmakelists, 3D model design, product assembly, and Inventory UI Improvements |
+| Ryan Ho   | Object & Text Detection Classes, Main Program Integration, Documentation and 3D Model Design, cmakelists, and Inventory UI Improvements |
 
 ## Future Work
 
