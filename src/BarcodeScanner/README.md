@@ -143,8 +143,6 @@ make barcode_scanner
 
 ## Testing
 
-> **TODO:** Unit tests to be written. See `test/` directory.
-
 The module is designed for testability — `fetch_product` and `upsertItem` are independently callable, and the serial port is injected as a path string so tests can substitute a virtual port or a named pipe.
 
 Planned test cases:

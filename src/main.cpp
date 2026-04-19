@@ -32,8 +32,6 @@ struct FridgeState {
     double          lux = 0.0;
 };
 
-
-// hANDSHAKE FUNCTION
 // writes the JSON file that the API will serve to the PIFRIDGE app
 void saveStateToJson(const FridgeState& state) {
     // We create the file in the current working directory (usually /build)
@@ -288,22 +286,5 @@ int main() {
     scanner.stop();
     camera.stop();
 
-    // ----- TEMP EXPLANATION OF THE  MAIN PROGRAM
-    // server.stop();
-    // door.stop();
-
-    // -- BME680 sensor setup --
-    // Start up web server
-
-    // Start threads for server vitals & light sensor & turn on barcode scanner
-
-    // start of infinite loop
-        // If Door Shut then
-        // Turn barcode scanner off
-        // Fridge vitals uploaded to web app using intervals
-
-        // If Door Open then
-        // Barcode scanner on, and able to scan and update the web app whenever
-        // Fridge vitals uploaded to web app using intervals
     return 0;
 }

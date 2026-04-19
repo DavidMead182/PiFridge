@@ -9,7 +9,7 @@
 // Function to fetch product info from OpenFoodFacts API
 void fetch_product(const std::string& number);
 
-// Class to read data from a serial port
+// Class to read data from a barcode scanner connected via a serial port
 class BarcodeScanner {
 public:
     using Callback = std::function<void(const std::string&)>;

@@ -91,19 +91,6 @@ timerfd expires
 ### Why `timerfd` over `sleep()`?
 `std::this_thread::sleep_for()` introduces drift because measurement time is not accounted for. `timerfd` with `CLOCK_MONOTONIC` fires at absolute wall-clock intervals regardless of how long each measurement takes, giving consistent sample timing.
  
- 
-## Latency
- 
-| Event | Measured latency |
-|||
-| `timerfd` expiry → callback fired | [X–X µs] |
-| BME680 forced-mode measurement | ~[X] ms (dominated by heater warm-up at 150 ms) |
-| I2C burst read (17 bytes) | [X µs] |
-| End-to-end: timer expiry → sample in callback | ~[X] ms |
- 
-> **TODO:** Fill in with measured values from the running system.
- 
- 
 ## Dependencies
  
 ### Runtime
@@ -140,11 +127,6 @@ make
  
 The `bme680` static library is linked into the main executable automatically via the top-level `CMakeLists.txt`.
  
-
- 
-## Testing
- 
-> **TODO:** Unit tests to be written. See `test/` directory.
 
 ## Latency Timings
 
