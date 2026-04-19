@@ -546,7 +546,7 @@
 
         var lastInventoryJSON = "";
         var editingItemId = null;
-        var currentInventory = []; // ✅ NEW
+        var currentInventory = []; 
 
         function escapeHtml(value) {
             return String(value || "")
@@ -596,7 +596,7 @@
         // Inventory
         // ---------------------------------------------------------------------------
         function renderInventory(items) {
-            currentInventory = items; // ✅ store latest inventory
+            currentInventory = items;
 
             var newJSON = JSON.stringify(items);
             if (newJSON === lastInventoryJSON) return;
