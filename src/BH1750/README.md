@@ -222,7 +222,7 @@ cmake -B build
 cmake --build build
 ```
 
-## Hardware Assumptions
+## Hardware
 
 - I2C device path: `/dev/i2c-1`
 - PiFridge currently uses BH1750 address `0x23`
