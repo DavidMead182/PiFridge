@@ -15,7 +15,8 @@ https://github.com/user-attachments/assets/58a5558d-a3d2-4910-9e7c-18d99d581527
 
 | Desktop | Mobile Phone |
 |---------|--------------|
-|<img alt="image" src="https://github.com/user-attachments/assets/b3a85933-926a-4400-80bc-8c48482db348" />| <img alt="image" src="https://github.com/user-attachments/assets/132e4b3f-a930-48f6-a9f4-89cba6a48bce" /> |
+| <img alt="image" src="https://github.com/user-attachments/assets/edffd45e-ff5b-4097-a511-30b6dda939c5" /> | <img alt="pifridge_iphone_notch" src="https://github.com/user-attachments/assets/cd254152-112e-4031-b696-ebd7885ca3ca" />
+ |
 
 ### 3D Model
 [Link to Fusion Files](3D_Model)
