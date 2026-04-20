@@ -130,33 +130,17 @@ Products not found in the Open Food Facts database are silently skipped with a l
 sudo apt install libcurl4-openssl-dev libsqlite3-dev
 ```
 
----
+--- 
 
-## Building
+## Demo
 
-```bash
-cmake .
-make barcode_scanner
-```
-
----
-
-## Testing
-
-The module is designed for testability — `fetch_product` and `upsertItem` are independently callable, and the serial port is injected as a path string so tests can substitute a virtual port or a named pipe.
-
-Planned test cases:
-- `extractJsonString` correctly parses product name from a known API response
-- `upsertItem` increments quantity when barcode already exists
-- `upsertItem` inserts a new row when barcode is not present
-- `fetch_product` skips gracefully when API returns `"status": 0`
-- `BarcodeScanner` callback fires with correct barcode string for known byte sequences
-- `stop()` joins thread cleanly without hanging
-
-To run tests once written:
+To run the demo file for this module, run the following commands in the Barcode Scanner Directory.
 
 ```bash
-make test
+mkdir build
+cd build
+cmake ..
+cmake --build .
 ```
 
 ---
