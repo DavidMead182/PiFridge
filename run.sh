@@ -36,6 +36,22 @@ sudo cp "$REPO_DIR/src/web_app/index.html" /var/www/pifridge/
 sudo chown -R www-data:www-data /var/www/pifridge
 
 # ---------------------------------------------------------------------------
+# Configure nginx to serve from /var/www/pifridge
+# ---------------------------------------------------------------------------
+echo ""
+echo "==> [PiFridge] Configuring nginx..."
+sudo cp "$REPO_DIR/config/pifridge.conf" /etc/nginx/sites-available/pifridge
+sudo ln -sf /etc/nginx/sites-available/pifridge /etc/nginx/sites-enabled/pifridge
+sudo rm -f /etc/nginx/sites-enabled/default
+
+if sudo nginx -t 2>/dev/null; then
+    echo "==> [PiFridge] nginx config OK."
+else
+    echo "[ERROR] nginx config invalid. Check /etc/nginx/sites-available/pifridge"
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
 # Ensure socket directory exists with correct permissions
 # ---------------------------------------------------------------------------
 echo ""
@@ -55,7 +71,7 @@ sudo chown "$PI_USER":"$PI_USER" /var/lib/pifridge
 # ---------------------------------------------------------------------------
 echo ""
 echo "==> [PiFridge] Starting nginx..."
-sudo systemctl start nginx
+sudo systemctl restart nginx
 
 # ---------------------------------------------------------------------------
 # Kill any existing instances cleanly before starting fresh
