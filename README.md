@@ -116,7 +116,18 @@ Ensure that these devices are connected properly to avoid any hardware-related i
 
 ### 3. Build & Run
 
-#### Option A — Using `run.sh` (Recommended)
+#### Option A — Running Without Website
+
+If you prefer not to run the website, you can build and run the program without it. Follow these steps:
+
+1. **Build from the repo root**:
+   ```bash
+   cmake -B build && cmake --build build
+2. **Run the program**:
+   ```bash
+   sudo ./build/src/pifridge
+
+#### Option B — Using `run.sh` (Recommended)
  
 `run.sh` handles building, permissions, socket setup, and starting all processes in the correct order.
  
@@ -144,7 +155,7 @@ Stop all processes with `Ctrl+C`.
  
 ---
  
-#### Option B — Manual Steps
+#### Option C — Manual Steps
  
 If you prefer to run each step yourself, follow the sequence below. Replace `pifridge` with your Raspberry Pi username throughout.
  
