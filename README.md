@@ -69,7 +69,7 @@ During this project only £42.17 was spent as raspberry pi, pi camera and breadb
 
 ## Circuit Setup
 ### Diagram
-<img width="1261" height="623" alt="image" src="https://github.com/user-attachments/assets/64a72e70-ce40-4763-bb38-6fcf1cf4c318" />
+<img alt="image" src="https://github.com/user-attachments/assets/3465cdaf-f961-4182-b5ad-56857b7b0053" />
 
 ### Real Life Setup
 ![WhatsApp Image 2026-04-12 at 21 28 18](https://github.com/user-attachments/assets/6dc8ac35-a8f4-4e9a-965c-3e4624887d54)
