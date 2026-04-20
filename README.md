@@ -120,12 +120,17 @@ Ensure that these devices are connected properly to avoid any hardware-related i
 
 If you prefer not to run the website, you can build and run the program without it. Follow these steps:
 
-1. **Build from the repo root**:
-   ```bash
-   cmake -B build && cmake --build build
-2. **Run the program**:
-   ```bash
-   sudo ./build/src/pifridge
+**1. Build from the repo root**:
+
+```bash
+cmake -B build && cmake --build build
+```
+
+**2. Run the program**
+   
+```bash
+sudo ./build/src/pifridge
+```
 
 #### Option B — Using `run.sh` (Recommended)
  
