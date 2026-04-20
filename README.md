@@ -87,7 +87,33 @@ cd PiFridge
 sudo apt update
 sudo apt install -y nginx libfcgi-dev cmake pkg-config libcurl4-openssl-dev build-essential libtensorflow-lite-dev libopencv-dev libsqlite3-dev
 ```
- 
+
+### 2.1 Configuration of Serial and I2C Interfaces
+
+In order to get this program to run, you need to enable certain interfaces on your Raspberry Pi:
+
+1. Run `sudo raspi-config` and follow these steps:
+
+   - Go to **Interface Options** > **Serial Port**:
+     - "Would you like the login shell to be accessible over serial?" **No**
+     - "Would you like the serial port hardware to be enabled?" **Yes**
+   
+   - Go to **Interface Options** > **I2C**:
+     - "Would you like the ARM I2C interface to be enabled?" **Yes**
+   
+2. Finish and reboot when prompted or run `sudo reboot` manually.
+
+### Hardware Peripherals Configuration
+
+Make sure your peripherals are connected and running on the following interfaces:
+
+- **Light sensor**: I2C Interface 23
+- **Heat sensor**: I2C Interface 76
+- **Barcode sensor**: `/dev/ttyAMA0`
+
+Ensure that these devices are connected properly to avoid any hardware-related issues.
+
+
 ### 3. Build & Run
 
 #### Option A — Using `run.sh` (Recommended)
