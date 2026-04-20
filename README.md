@@ -107,8 +107,8 @@ In order to get this program to run, you need to enable certain interfaces on yo
 
 Make sure your peripherals are connected and running on the following interfaces:
 
-- **Light sensor**: I2C Interface 23
-- **Heat sensor**: I2C Interface 76
+- **Light sensor**: I2C address `0x23`
+- **Heat sensor**: I2C address `0x76`
 - **Barcode sensor**: `/dev/ttyAMA0`
 
 Ensure that these devices are connected properly to avoid any hardware-related issues.
