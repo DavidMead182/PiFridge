@@ -8,8 +8,9 @@ PiFridge is a Raspberry Pi 5-powered real-time embedded system that scans food v
 Built as a real-time embedded systems project at the University of Glasgow.
 
 ## Demos
-
-https://github.com/user-attachments/assets/58a5558d-a3d2-4910-9e7c-18d99d581527
+| Release 1.0.0 | Pre Release 1.0.0 |
+|---------------|-------------------|
+| https://github.com/user-attachments/assets/53e45bcc-b019-4719-8e95-a27df21b1405 | https://github.com/user-attachments/assets/58a5558d-a3d2-4910-9e7c-18d99d581527 |
 
 ### Webapp view
 
