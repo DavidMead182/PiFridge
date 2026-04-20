@@ -15,15 +15,15 @@ https://github.com/user-attachments/assets/58a5558d-a3d2-4910-9e7c-18d99d581527
 
 | Desktop | Mobile Phone |
 |---------|--------------|
-| <img alt="image" src="https://github.com/user-attachments/assets/edffd45e-ff5b-4097-a511-30b6dda939c5" /> | <img alt="pifridge_iphone_notch" src="https://github.com/user-attachments/assets/cd254152-112e-4031-b696-ebd7885ca3ca" />
- |
+| <img alt="image" src="https://github.com/user-attachments/assets/edffd45e-ff5b-4097-a511-30b6dda939c5" /> | <img alt="pifridge_iphone_notch" src="https://github.com/user-attachments/assets/cd254152-112e-4031-b696-ebd7885ca3ca" /> |
 
 ### 3D Model
 [Link to Fusion Files](3D_Model)
 
-| Component Layout | Case | Case & Lid |
-|------------------|------|------------|
-| <img alt="image" src="https://github.com/user-attachments/assets/b929943d-58ae-4886-97f6-aacb84f34ed2" /> | <img alt="image" src="https://github.com/user-attachments/assets/533ffd28-ffdd-4b51-84ae-7e644565bd23" /> | <img alt="image" src="https://github.com/user-attachments/assets/849aa461-8347-4353-b137-0b18dcc71159" /> |
+| Component Layout | Case & Lid |
+|------------------|------------|
+| <img alt="image" src="https://github.com/user-attachments/assets/b929943d-58ae-4886-97f6-aacb84f34ed2" /> | <img alt="image" src="https://github.com/user-attachments/assets/6d350633-e01b-4da3-9db8-482e2e90b81c" /> |
+
 
 
 
